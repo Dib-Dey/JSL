@@ -1,0 +1,129 @@
+names default to here(1);
+
+/* Dan Lenski <daniel.r.lenski@intel.com>, PTD LYA */
+
+dt=current data table();
+If(!Namespace Exists("csom"), New Namespace("csom"));
+Try(csom:search_string, csom:search_string="");
+Try(csom:search_type, csom:search_type=1);
+Try(csom:keep_open, csom:keep_open=0);
+Try(csom:csen, csom:csen=0);
+
+/////////////////////////////////
+search_types = {"Regex", "Substring"};
+current_selection_types = {"Clear current selection", "Extend current selection", "Select from current selection"};
+
+select_columns = function({dt, search_type="String", search_string, csen=0, action=1, current=1}, {default local},
+
+	write("(");
+	show("select_columns", dt, search_type, search_string, csen, action, current);
+	write(")");
+	
+	cn = dt<<Get Column Names(string);
+
+	for(ii=1, ii<=nitems(cn), ii++,
+		col = Column(dt, cn[ii]);
+		cursel = col<<Get Selected();
+		
+		If(search_type=="Substring" & csen,
+			match = Contains(cn[ii], search_string),
+		   search_type=="Substring" & !csen,
+			match = Contains(Lowercase(cn[ii]), Lowercase(search_string)),
+		   search_type=="Regex" & csen,
+		    match = IsString(Regex(cn[ii], search_string)),
+		   search_type=="Regex" & !csen,
+		    match = IsString(Regex(cn[ii], search_string, "", IGNORECASE)),
+		   /* else */
+		    match = 0;
+		);
+
+		If(current==1,
+		    col<<Set Selected(If(match,action,!action)),
+		   current==2,
+		    If(match, col<<Set Selected(action)),
+		   current==3,
+			If(
+				match & cursel, col<<Set Selected(action),
+				cursel, col<<Set Selected(!action)
+			),
+		);
+	);
+);
+
+make_column_group = function( {dt, cols, name=Empty()}, {default local},
+	write("(");
+	show("make_column_group", dt, cols, name);
+	write(")");
+
+	If(N Items(cols)>1,
+		If(IsString(name),
+			namec = dt<<New Column( name );
+			dt<<Move Selected Columns( {namec}, After(cols[1]) );
+			Insert Into(cols, namec, 1);	
+		);
+		
+		x=EvalExpr(
+				dt<<Move Selected Columns( Expr(Remove(cols,1)), After(Expr(cols[1])) );
+				dt<<Group Columns(Expr(cols));
+		);
+		show(x);
+		eval(x);
+		
+		If(IsString(name),
+			dt<<Delete Columns(namec);
+		);
+	);
+);
+
+////////////////////////////////
+dlg = New Window( "Column select-o-matic", Border Box(Left(5), Right(5), Top(5), Bottom(5),
+	H List Box(
+		V List Box(
+			Line Up Box(NCol(2),
+				Text Box("Columns to match: "),
+				search_string = Text Edit Box( csom:search_string ),
+				
+				Text Box("Group name: "),
+				group_name = Text Edit Box( "" ),
+				
+				Panel Box( "Type of search:",
+					st_rb = Radio Box( search_types, <<Set(csom:search_type, 1) ),
+					csen = Check Box( "Case sensitive", <<Set(csom:csen) ),
+				),
+				Panel Box( "Action:",
+					action = Radio Box( {"Select", "Deselect"}, 
+						Match(action<<Get(),
+							1, select<<SetButtonName("Select"),
+							2, select<<SetButtonName("Deselect"); current<<Set(3),
+						);
+					),
+					current = Combo Box(current_selection_types),
+				)
+			),
+			H List Box(
+				Text Box("Data table: "),
+				Global Box(dt)
+			)
+		),
+		Line Up Box(NCol(1),
+			select = Button Box( "Select",
+				select_columns(
+					dt,
+					search_types[csom:search_type = st_rb<<Get()],
+					csom:search_string = search_string<<Get Text(), 
+					csom:csen = csen<<Get(), 
+					2-(action<<Get()),
+					current<<Get()
+				);
+				If(Not(keep_open<<Get()), dlg<<Close Window );
+			),
+			groupsel = Button Box( "Group selected",
+				make_column_group(dt, dt<<get selected columns(),
+					If(Length(group_name<<GetText())>0, group_name<<GetText())
+				)
+			),
+			Button Box( "Close", dlg<<CloseWindow ),
+			keep_open = Check Box( "Keep dialog open", <<Set(csom:keep_open));
+		)
+	)
+));
