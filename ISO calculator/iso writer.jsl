@@ -1,0 +1,96 @@
+Try(close(dt,nosave));
+
+New Window("Welcome to ISO Writer",
+	<<Modal,
+	Text Box("Before you continue with the ISO writer, make sure to write the list of product and number of good dies in input file (xls or jmp).Once you run this program,
+	You will be asked to load this input table.Program will generate and populate 2 other column with ISO and defect density values. Please press ok to continue",<< set width(300)),
+	Button Box ("OK")
+		);
+	
+//f=open("\\VMSPFSFSEG14\ptd_p1274_lya\Users\ddey\ISO Calculator\input.jmp");
+Try( f = Open(), Throw( "No data table found" ) );
+x=nrow();
+f << New Column("ISO value", Numeric, Continuous, Format("Best",5));
+f << New Column("Defect density value", Numeric, Continuous, Format("Best",5));
+
+
+For( i = 1, i <= x, i++,
+	prod=Column(1)[i];
+	GOOD=Column(2)[i];
+	dt=open("\\VMSPFSFSEG14\ptd_p1274_lya\Utility JSLs\ISO Calculator\product_parameter.jmp");
+	dt << Clear Select;
+	dt << Clear Column Selection;
+	Name("Y0 (Linear Yield Function)")=0.8;
+	y=nrow();
+	show(prod);
+	For( j = 1, j <= y, j++,
+	(String = Column( "Product" )[j]; 
+	If( String==prod,show(String));
+	If( String==prod,a=j);
+	If( String==prod,Current Data Table() << Select Rows( {j}));
+	)
+	);
+	show(prod);
+	show(GOOD);
+/*********************************************************************Formula for each term*************************************************************************************************/
+Scale Factor=Round(sqrt(Name("% of Full Dice")[a]),8);
+Name("Die X (mils)")= Round((Name("Full Die X (mils)")[a]) * Scale Factor,8);
+Name("Die Y (mils)")= Round((Name("Full Die Y (mils)")[a]) * Scale Factor,8);
+Name("% Test Area in reticle")=Round((Name("Die X (mils)")* Name("Die Y (mils)")* Name("No. of dice in reticle") [a])/(Name("Reticle Die X (mils)")[a] * Name("Reticle Die Y (mils)")[a]),8);
+Name ("Die Size (mils) --sqrt x*y")=Round(sqrt(Name("Die X (mils)") * Name("Die Y (mils)")),8);
+Name("A (Die area cm^2)")=Round(((Name("Die X (mils)") * Name("Die Y (mils)") * 2.54 *2.54)/(1000 * 1000)),8);
+Name("Die Size (cm)")=Round(sqrt(Name("A (Die area cm^2)")[a]),8);
+GDC=Round(0.00768 * (( Name ("Wafer Size (mm)") [a] * Name ("Wafer Size (mm)")[a])/Name("A (Die area cm^2)"))* 
+(1 - (sqrt(Name("A (Die area cm^2)")))/(0.05 * Name("Wafer Size (mm)")[a])),8);
+GDA =Round(GDC * Name("% Test Area in reticle"),8);
+Name("RF (Radial Yield Function)")=Round(((Name("Wafer Size (mm)")[a] / 50)/(1 + (Name("Wafer Size (mm)")[a] / 50)) + 
+1/((Name("Wafer Size (mm)")[a] / 50) +exp(5.3 * Name("A (Die area cm^2)")))),8);
+/*********************************************************************Formula for each term*************************************************************************************************/
+show(Scale Factor);
+show(Name("Die X (mils)"));
+show(Name("Die Y (mils)"));
+show(Name("% Test Area in reticle"));
+show(Name ("Die Size (mils) --sqrt x*y"));
+show(Name("A (Die area cm^2)"));
+show(Ln(GOOD / GDA));
+show(Name("Y0 (Linear Yield Function)"));
+show(Name("RF (Radial Yield Function)"));
+show(Ln((Name("Y0 (Linear Yield Function)") * Name("RF (Radial Yield Function)")) - Name("A (Die area cm^2)")));
+
+show(700 - 100 * (Ln(GOOD / GDA) / (Ln(Name("Y0 (Linear Yield Function)")* 
+Name("RF (Radial Yield Function)")) - Name("A (Die area cm^2)"))));
+name1=700 - 100 * (Ln(GOOD / GDA) / (Ln(Name("Y0 (Linear Yield Function)")* 
+Name("RF (Radial Yield Function)")) - Name("A (Die area cm^2)")));
+ 
+show(650 + (50 / Name("A (Die area cm^2)")) * Ln(GOOD / (GDA * Name("Y0 (Linear Yield Function)")
+ * Name("RF (Radial Yield Function)"))));
+name2=650 + (50 / Name("A (Die area cm^2)")) * Ln(GOOD / (GDA * Name("Y0 (Linear Yield Function)") * Name("RF (Radial Yield Function)")));
+
+/*******************************************ISO Calculation***************************************************/
+
+ISO=if(GOOD==0,0,GOOD<0,0,name1<0,0,name1>600,name1,name2<0,0,name2);
+ISO=Round(ISO,6);
+show(ISO);
+/*******************************************Defect Density Calculation***************************************************/
+
+
+defect density=If((7 - ISO / 100) > (13 - ISO / 50), 7 - ISO / 100, 13 - ISO / 50);
+defect density=Round(defect density,6);
+show(defect density);
+
+/************************************************************************************************************************/
+dt << Clear Select;
+dt << Clear Column Selection;
+Try(close(dt,nosave));
+/************************************************************************************************************************/
+Name("ISO value")[i]=ISO;
+Name("Defect density value")[i]=defect density;
+/************************************************************************************************************************/
+);
+f << Clear Select;
+f << Clear Column Selection;
+//Try(close(f,nosave));
+
+
+
+
