@@ -1,0 +1,100 @@
+﻿clear log();
+
+dt = current data table();
+
+check_FWP_colum = dt << get column names (string);
+column_check = "FWP";
+IF (!contains(check_FWP_colum, column_check), 
+New Window ( "No FWP", << Modal, Text Box ("There is no FWP column in this table"), Button Box ("Ok")),
+
+dt_check = dt << Summary (Group(:FWP));
+FWPnumRows = nrows(dt_check);
+
+IF (FWPnumRows > 2, 
+New Window ( "POR & NEW", << Modal, Text Box ("More entries then POR & NEW in FWP"), Button Box ("Ok"),close (dt_check, nosave)),
+
+close (dt_check, nosave);
+
+FWPTable = New Table( "FWP table",
+	New Column( "Response", Character, Nominal, Set Values( {""} ) ),
+	New Column( "μ - POR", hide(1), Numeric, Continuous,	Format( "Fixed Dec", 12, 2 )),
+	New Column( "σ - POR", hide(1), Numeric,	Continuous, Format( "Fixed Dec", 12, 2 )),
+	New Column( "μ ± σ POR", Character, Nominal, Formula(
+			Char( Round( :Name( "μ - POR" ), 2 ) ) || "±" ||
+			Char( Round( :Name( "σ - POR" ), 2 ) )),),
+	New Column( "n - POR", Numeric, Continuous, Format( "Fixed Dec", 12, 0 )),
+	New Column( "μ - NEW", hide(1), Numeric,	Continuous, Format( "Fixed Dec", 12, 2 )),
+	New Column( "σ - NEW", hide(1),Numeric, Continuous, Format( "Fixed Dec", 12, 2 )),
+	New Column( "μ ± σ NEW", Character, Nominal, Formula(
+			Char( Round( :Name( "μ - NEW" ), 2 ) ) || "±" ||
+			Char( Round( :Name( "σ - NEW" ), 2 ) )),),
+	New Column( "n - NEW", Numeric, Continuous, Format( "Fixed Dec", 12, 0 )),
+	
+);
+	
+ResponseTable = New Table( "Response",
+	New Column( "Response",
+		Character,
+		Nominal,
+		Set Values(
+			{
+"%DPWFail chains_all combo~raster",		
+"%DPWFail chains_all combo@CTR~raster",
+"%DPWFail chains_all combo@DNT~raster",
+"%DPWFail chains_all combo@EDG~raster",
+"%DPWFail combs_all combo~raster",
+"%DPWFail combs_all combo@CTR~raster",
+"%DPWFail combs_all combo@DNT~raster",
+"%DPWFail combs_all combo@EDG~raster"
+
+				
+			}
+		)
+	)
+);
+
+numRows = nrows(ResponseTable);
+
+n=1;
+
+For (i = 1, i <= numRows, i++,
+CurrentResponseName = ResponseTable:Response[i];
+dtsum = dt << Summary(Group(:Name("FWP")),Mean(ResponseTable:Response[i]),Std Dev(ResponseTable:Response[i]));
+
+nrow_NEW = dtsum:Name("N Rows")[1];
+nrow_POR = dtsum:Name("N Rows")[2];
+
+col3 = Column(3);
+col3 << Set Name ("mean");
+col4 = Column(4);
+col4 << Set Name ("Stdev");
+
+mean_NEW = dtsum:Mean[1];
+mean_POR = dtsum:Mean[2];
+stddev_NEW = dtsum:Stdev[1];
+stddev_POR = dtsum:Stdev[2];
+
+FWPTable << Add Rows ( {
+:Response = CurrentResponseName, 
+:Name("μ - POR") = mean_POR, 
+:Name("σ - POR") = stddev_POR,
+:Name("n - POR") = nrow_POR,
+:Name("μ - NEW") = mean_NEW, 
+:Name("σ - NEW") = stddev_NEW,
+:Name("n - NEW") = nrow_NEW			
+});
+
+
+
+Close (dtsum, nosave);
+
+);
+
+Close (ResponseTable, nosave);
+
+FWPTable << Delete Rows(1);
+FWPTable << New Column( "Decision", Character, Nominal, 
+		Formula(If( :Name( "μ - NEW" ) < :Name( "μ - POR" ) + 1.5 * :Name( "σ - POR" ),"Matched", "Worse")));
+		
+);
+);

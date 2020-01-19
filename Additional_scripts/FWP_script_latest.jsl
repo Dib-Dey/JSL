@@ -1,0 +1,236 @@
+﻿clear log();
+
+dt = current data table();
+
+check_FWP_colum = dt << get column names (string);
+column_check = "FWP";
+IF (!contains(check_FWP_colum, column_check), 
+New Window ( "No FWP", << Modal, Text Box ("There is no FWP column in this table"), Button Box ("Ok")),
+
+dt_check = dt << Summary (Group(:FWP));
+FWPnumRows = nrows(dt_check);
+
+IF (FWPnumRows > 2, 
+New Window ( "POR & NEW", << Modal, Text Box ("More entries then POR & NEW in FWP"), Button Box ("Ok"),close (dt_check, nosave)),
+
+close (dt_check, nosave);
+
+FWPTable = New Table( "FWP table",
+	New Column( "Response", Character, Nominal, Set Values( {""} ) ),
+	New Column( "μ - POR", hide(1), Numeric, Continuous,	Format( "Fixed Dec", 12, 2 )),
+	New Column( "σ - POR", hide(1), Numeric,	Continuous, Format( "Fixed Dec", 12, 2 )),
+	New Column( "μ ± σ POR", Character, Nominal, Formula(
+			Char( Round( :Name( "μ - POR" ), 2 ) ) || "±" ||
+			Char( Round( :Name( "σ - POR" ), 2 ) )),),
+	New Column( "n - POR", Numeric, Continuous, Format( "Fixed Dec", 12, 0 )),
+	New Column( "μ - NEW", hide(1), Numeric,	Continuous, Format( "Fixed Dec", 12, 2 )),
+	New Column( "σ - NEW", hide(1),Numeric, Continuous, Format( "Fixed Dec", 12, 2 )),
+	New Column( "μ ± σ NEW", Character, Nominal, Formula(
+			Char( Round( :Name( "μ - NEW" ), 2 ) ) || "±" ||
+			Char( Round( :Name( "σ - NEW" ), 2 ) )),),
+	New Column( "n - NEW", Numeric, Continuous, Format( "Fixed Dec", 12, 0 )),
+	
+);
+	
+ResponseTable = New Table( "Response",
+	New Column( "Response",
+		Character,
+		Nominal,
+		Set Values(
+			{
+"DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M0M1@PCTFAIL",
+"DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M0M1@PCTFAIL",
+"V0M0SM_M1B/M022B window@MEAN@S00PD00@BE_EOL",
+"V0M0SM_M1C/M022C window@MEAN@S00PD00@BE_EOL",
+"V0M0SM_M1S/M022S window@MEAN@S00PD00@BE_EOL",
+"M1LINE_20B:RL@COMBO median@MEAN@S00PD00@BE_EOL",
+"M1LINE_20C:RL@COMBO median@MEAN@S00PD00@BE_EOL",
+"M1LINE_20S:RL@COMBO median@MEAN@S00PD00@BE_EOL",
+"KV0_20B:R4@COMBO median@MEAN@S00PD00@BE_EOL",
+"KV0_20C:R4@COMBO median@MEAN@S00PD00@BE_EOL",
+"KV0_20S:R4@COMBO median@MEAN@S00PD00@BE_EOL"
+/* NEW BORIS columns SORT columns for M1M2*/ 
+/*"DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M1M2@PCTFAIL",
+"DPW_PREHVQK:GT_CMB_ALL:COMBO@RECL@M1M2@PCTFAIL",*/
+
+/*NEW BORIS SORT columns for M2M3*/ 
+//"DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M2M3@PCTFAIL",
+//"DPW_PREHVQK:GT_CMB_ALL:COMBO@RECL@M2M3@PCTFAIL",
+
+
+/* NEW BORIS SORT columns for M3M4*/ 
+/*"DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M3M4@PCTFAIL",
+"DPW_PREHVQK:GT_CMB_ALL:COMBO@RECL@M3M4@PCTFAIL",*/
+
+/* NEW BORIS SORT columns for M4M5*/ 
+/*"DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M4M5@PCTFAIL~sort",
+"DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M4M5@PCTFAIL~sort",*/
+
+
+/*BORIS M1M2 Etest columns*/
+/*"V1M1SM_T2A1/24B margin@MEAN@S00PD00@BE_EOL",
+"V1M1SM_T2A1/24C margin@MEAN@S00PD00@BE_EOL",
+"V1M1SM_T2A1/24B window@MEAN@S00PD00@BE_EOL",
+"V1M1SM_T2A1/24C window@MEAN@S00PD00@BE_EOL",
+"KVA1_24NM:R4@COMBO median@MEDIAN@S00PD00@BE_EOL",
+"KVB1_24NM:R4@COMBO median@MEDIAN@S00PD00@BE_EOL",
+"KVC1_24NM:R4@COMBO median@MEDIAN@S00PD00@BE_EOL",
+"KVA1/MED_T2A15/68B_20S:R4_V1_100UA@MEDIAN@S00PD00@BE_EOL",
+"KVB1/MED_T2A15/68B_20S:R4_V1_100UA@MEDIAN@S00PD00@BE_EOL",
+"KVC1/MED_T2A15/68B_20S:R4_V1_100UA@MEDIAN@S00PD00@BE_EOL",
+"M2LINE_24B:RL@COMBO median@MEDIAN@S00PD00@BE_EOL",
+"M2LINE_24C:RL@COMBO median@MEDIAN@S00PD00@BE_EOL",
+"M2LINE_68B:RL@COMBO median@MEDIAN@S00PD00@BE_EOL",
+"M2LINE_68C:RL@COMBO median@MEDIAN@S00PD00@BE_EOL"*/
+/*"VxMx SM window",
+"VxMx SM",
+"KVx resistance",
+"M(x-1) resistance",
+"Mx resistance",*/
+
+/*M1M2 metrics*/
+
+/*"V1M1SM_T2A1/24B Window~etest",
+"V1M1SM_T2A1/24C Window~etest",
+"V1M1SM_T2A15/68B Window~etest",
+"V1M1SM_T2A5/68C Window~etest",
+"V1M1SM_T2A1/24B Margin~etest",
+"V1M1SM_T2A1/24C Margin~etest",
+"V1M1SM_T2A15/68B Margin~etest",
+"V1M1SM_T2A5/68C Margin~etest",
+"V1CHN_T2A1/24B_COV: REGMARGIN mean~etest",
+"V1CHN_T2A1/24C_COV: REGMARGIN mean~etest",
+"KV1_24B median~etest",
+"KV1_68B median~etest",
+"KV1_24C median~etest",
+"KV1_68C median~etest",
+"KVC1/MED_T2A1/24B_20S: R4_V1_100UA median~etest",
+"KVC1/MED_T2A1/24C_20S: R4_V1_100UA median~etest",
+"KVC1/MED_T2A15/68B_20S: R4_V1_100UA median~etest",
+"KVC1/MED_T2A5/68C_20S: R4_V1_100UA median~etest"*/
+
+/*M2M3 metrics*/
+
+/*"KVA2/MED_T3PL134/24B_T2A1/24C:R4_V2_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVA2/MED_T3PL135/24C_T2A1/24C:R4_V2_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVA2/MED_T3PL138/68B_T2A1/24C:R4_V2_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVA2/MED_T3PL137/68C_T2A1/24C:R4_V2_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVB2/MED_T3PL134/24B_T2A1/24C:R4_V2_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVB2/MED_T3PL135/24C_T2A1/24C:R4_V2_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVB2/MED_T3PL138/68B_T2A1/24C:R4_V2_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVB2/MED_T3PL137/68C_T2A1/24C:R4_V2_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVA2/MED_T3PL134/24B_T2A1/24C:RL_M3_0.2V@MEDIAN@S00PD00@BE_EOL",
+"KVA2/MED_T3PL135/24C_T2A1/24C:RL_M3_0.2V@MEDIAN@S00PD00@BE_EOL",
+"KVA2/MED_T3PL134/24B_T2A1/24C:RL_M2_0.5V@MEDIAN@S00PD00@BE_EOL",
+"KVA2/MED_T3PL135/24C_T2A1/24C:RL_M2_0.5V@MEDIAN@S00PD00@BE_EOL",
+"V2M2SM_T3PL134/24C_T2A1/24C margin@MEDIAN@S00PD00@BE_EOL",
+"V2M2SM_T3PL135/24B_T2A1/24B margin@MEDIAN@S00PD00@BE_EOL",
+"V2M2SM_T3PL138/68B_T2A1/24B margin@MEDIAN@S00PD00@BE_EOL",
+"V2M2SM_T3PL137/68C_T2A1/24B margin@MEDIAN@S00PD00@BE_EOL",
+"V2M2SM_T3PL135/24B_T2A1/24B window@MEDIAN@S00PD00@BE_EOL",
+"V2M2SM_T3PL134/24C_T2A1/24C window@MEDIAN@S00PD00@BE_EOL",
+"V2M2SM_T3PL138/68B_T2A1/24B window@MEDIAN@S00PD00@BE_EOL",
+"V2M2SM_T3PL137/68C_T2A1/24B window@MEDIAN@S00PD00@BE_EOL",
+"Median(V2CHN_T3PL134/24B_COV Window)",
+"Median(V2CHN_T3PL134/24C_COV Window)",
+"Median(V2CHN_T4A51/24B_LAN Window)",
+"Median(V2CHN_T4A51/24C_LAN Window)"*/
+
+/*M3M4 metrics*/
+
+/*"KVA3/MED_T4A51/24B_T3PL135/24C:R4_V3_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVA3/MED_T4A51/24C_T3PL135/24C:R4_V3_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVA3/MED_T4H1/68B_T3PL135/24C:R4_V3_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVA3/MED_T4A15/68C_T3PL135/24C:R4_V3_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVB3/MED_T4A51/24B_T3PL135/24C:R4_V3_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVB3/MED_T4A51/24C_T3PL135/24C:R4_V3_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVB3/MED_T4H1/68B_T3PL135/24C:R4_V3_200UA@MEDIAN@S00PD00@BE_EOL",
+"KVB3/MED_T4A15/68C_T3PL135/24C:R4_V3_200UA@MEDIAN@S00PD00@BE_EOL",
+"V3M3SM_T4A51/24B_T3PL135/24C margin@MEDIAN@S00PD00@BE_EOL",
+"V3M3SM_T4A51/24C_T3PL135/24B margin@MEDIAN@S00PD00@BE_EOL",
+"V3M3SM_T4H1/68B_T3PL135/24C margin@MEDIAN@S00PD00@BE_EOL",
+"V3M3SM_T4A15/68C_T3PL135/24C margin@MEDIAN@S00PD00@BE_EOL",
+"V3M3SM_T4A51/24B_T3PL135/24C window@MEDIAN@S00PD00@BE_EOL",
+"V3M3SM_T4A51/24C_T3PL135/24B window@MEDIAN@S00PD00@BE_EOL",
+"V3M3SM_T4H1/68B_T3PL135/24C window@MEDIAN@S00PD00@BE_EOL",
+"V3M3SM_T4A15/68C_T3PL135/24C window@MEDIAN@S00PD00@BE_EOL",
+"KVA3/MED_T4A51/24B_T3PL135/24C:RL_M4_0.5V@MEDIAN@S00PD00@BE_EOL",
+"KVA3/MED_T4A51/24C_T3PL135/24C:RL_M4_0.5V@MEDIAN@S00PD00@BE_EOL",
+"Median(V3CHN_T4A51/24B_COV Window)",
+"Median(V3CHN_T4A51/24C_COV Window)",
+"Median(V3CHN_T4A51/24B_LAN Window)",
+"Median(V3CHN_T4A51/24C_LAN Window)"*/
+
+/*M4M5 metrics*/
+/*"M5LINE_28B:RL@COMBO median@MEAN@S00PD00@BE_EOL~etest",
+"M5LINE_28C:RL@COMBO median@MEAN@S00PD00@BE_EOL~etest",
+"KV4/MED_28B:R4@COMBO median@MEAN@S00PD00@BE_EOL~etest",
+"KV4/MED_28C:R4@COMBO median@MEAN@S00PD00@BE_EOL~etest",
+"V4M4SM_T5A1/28B_T4A51/24C margin@MEDIAN@S00PD00@BE_EOL~etest",
+"V4M4SM_T5A9/28C_T4A51/24C margin@MEDIAN@S00PD00@BE_EOL~etest",
+"V4M4SM_T5A1/28B_T4A51/24C window@MEDIAN@S00PD00@BE_EOL~etest",
+"V4M4SM_T5A9/28C_T4A51/24C window@MEDIAN@S00PD00@BE_EOL~etest",
+"Median(V4CHN_T5A1/28B_GT_COV Window~etest)",
+"Median(V4CHN_T5A1/28C_GT_COV Window~etest)",
+"Median(V4CHN_T5A1/28B_LAN Window~etest)",
+"Median(V4CHN_T5A1/28C_LAN Window~etest)"*/
+
+/*M5M6 metrics*/
+/*"KV5/MED_T6A1/40B_T5A1/28B:RL_M6_0.1V@MEAN@7148@274BRCL",
+"KV5/MED_T6A1/40B_T5A1/28B:R4_V5_1MA@MEAN@7148@274BRCL",
+"KV5/MED_T6A6/140B_T5A1/28B:R4_V5_1MA@MEAN@7148@274BRCL",
+"KV5/MED_T6A6/140B_T5A1/28B:RL_M6_0.1V@MEAN@7148@274BRCL",
+"V5M5SM_T6A1/44_28B:REGMARGIN@MEAN@7148@274BRCL",
+"V5M5SM_T6A1/44_28B:REGWINDOW@MEAN@7148@274BRCL",
+"V5M5SM_T6A1/44_28C:REGMARGIN@MEAN@7148@274BRCL",
+"V5M5SM_T6A1/44_28C:REGWINDOW@MEAN@7148@274BRCL"*/
+}
+		)
+	)
+);
+
+numRows = nrows(ResponseTable);
+
+n=1;
+
+For (i = 1, i <= numRows, i++,
+CurrentResponseName = ResponseTable:Response[i];
+dtsum = dt << Summary(Group(:Name("FWP")),Mean(ResponseTable:Response[i]),Std Dev(ResponseTable:Response[i]));
+
+nrow_NEW = dtsum:Name("N Rows")[1];
+nrow_POR = dtsum:Name("N Rows")[2];
+
+col3 = Column(3);
+col3 << Set Name ("mean");
+col4 = Column(4);
+col4 << Set Name ("Stdev");
+
+mean_NEW = dtsum:Mean[1];
+mean_POR = dtsum:Mean[2];
+stddev_NEW = dtsum:Stdev[1];
+stddev_POR = dtsum:Stdev[2];
+
+FWPTable << Add Rows ( {
+:Response = CurrentResponseName, 
+:Name("μ - POR") = mean_POR, 
+:Name("σ - POR") = stddev_POR,
+:Name("n - POR") = nrow_POR,
+:Name("μ - NEW") = mean_NEW, 
+:Name("σ - NEW") = stddev_NEW,
+:Name("n - NEW") = nrow_NEW			
+});
+
+
+
+Close (dtsum, nosave);
+
+);
+
+Close (ResponseTable, nosave);
+
+FWPTable << Delete Rows(1);
+FWPTable << New Column( "Decision", Character, Nominal, 
+		Formula(If( :Name( "μ - NEW" ) < :Name( "μ - POR" ) + 1.5 * :Name( "σ - POR" ),"Matched", "Worse")));
+		
+);
+);

@@ -1,0 +1,21 @@
+// Script to update the current data with Defect File Dice #, Radius and Sort Location
+// from Smart X_Y Radius.
+// Expects a table with :Xdie, :Ydie columns to match those against the Smart dt.
+// 3 April 2014
+// Joshua LaForge - joshua.m.laforge@intel.com
+
+
+dt = Current Data Table();
+
+If( try(smart_dt = Data Table("Smart X_Y_Radius");, 1), 
+	smart_dt = Open("\\ddey-desk\D\deydesk\JSL Scripting\Rosetta_Wafer_Coordinate_Systems_1x114B.jmp") 
+	);
+
+dt << Update(
+			With( Data Table( "Smart X_Y_Radius" ) ),
+			Match Columns( :SMARTX = :X, :SMARTY = :Y ),
+			Add Columns from Update table( :Defect File Dice #, :R, :Sort Location )
+		);
+
+Wait(0);
+Close(smart_dt, NoSave);

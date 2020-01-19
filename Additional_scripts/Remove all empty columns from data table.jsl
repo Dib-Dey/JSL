@@ -1,0 +1,27 @@
+Names default to here(1);
+dt=current data table();
+allmissing=list();
+k=1;
+for(i=1,i<=ncols(dt),i++,
+	allmissingtemp=1;
+	datatype=column(i)<<get data type;
+	for(j=1,j<=nrows(dt),j++,
+		if(
+			datatype=="Numeric",
+			if(!is missing(column(i)[j]),allmissingtemp=0),
+			datatype=="Character",
+			if(length(column(i)[j])!=0,allmissingtemp=0)
+		);
+	);
+	if(allmissingtemp,allmissing[k]=i;k++);
+);
+missingcols={};
+for(i=1,i<=Nitems(allmissing),i++,
+	missingcols[i]=Column(Eval(allmissing[i]));
+);
+for(i=1,i<=Nitems(allmissing),i++,
+	tempcol=missingcols[i];
+	Print("Deleting column: "||Char(tempcol));
+	try(dt<<delete columns(tempcol),Print("Could not delete column: "||Char(tempcol)));
+);
+

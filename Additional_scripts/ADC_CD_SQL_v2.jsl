@@ -1,0 +1,61 @@
+//closeall(data tables);
+Include( Get Environment Variable( "UBER_JMP_DIR" ) || "\Include\UberJMP.jsl" );
+
+LotID_OracleClause = "WS.LOTID in ('D5197PG0K','D5197PG0','D5147L40')";
+LayerID_OracleClause = "WS.LAYERID in ('4M2FC_CD_CPI')";
+//M2/3/4FC
+Wafer_ID = "%";
+
+SQL_UDB = "SELECT  WS.*, D.class_number as defect_class, D.automated_optical_class as finebin, D.WAFER_X, D.WAFER_Y
+FROM 
+UDB.INTEL_ADCCDDATA WS, UDB.INSP_DEFECT D
+WHERE "
+ || LotID_OracleClause || " AND "
+ || LayerID_OracleClause || " AND
+WS.WAFERID like '" || Wafer_ID || "'
+AND WS.INSPECTION_TIME = D.INSPECTION_TIME 
+AND WS.WAFER_KEY = D.WAFER_KEY
+AND WS.DEFECT_ID = D.DEFECT_ID
+";
+
+dt = GetTableUsingUber( "D1D_PROD_YAS_1274", SQL_UDB );
+dt << Delete Columns("INDEX_X","INDEX_Y","SCRIBEID");
+dt << New Column("RADIUS", Set Formula(Root((:WAFER_X - 150000000) ^ 2 + (:WAFER_Y - 150000000) ^ 2, 2) / 1000000));
+dt_imprkey = dt << Summary( Group( :IMPRKEYNAME), Output Table Name("IMPRKEY"), invisible);
+
+SQL_DEC0 = "SELECT  * 
+FROM 
+UDB.INTEL_ADCCD_DECODER WS
+WHERE WS.IMPRKEYNAME = '<<IMPRKEYNAME>>'
+";
+
+For( i = 1, i <= N Rows( dt_imprkey ), i++,
+    myimprkey = dt_imprkey:IMPRKEYNAME[i];
+    SQL_DEC=substitute(SQL_DEC0,"<<IMPRKEYNAME>>",myimprkey);
+    dtkey = GetTableUsingUber( "D1D_PROD_YAS_1274", SQL_DEC);
+    dtkey << Set Name(myimprkey || "_Description");
+    dt << Select Where(:IMPRKEYNAME == myimprkey);
+	dt_structure = dt << Subset(( Selected Rows ), Output Table Name(myimprkey || "_Data"));
+    declist = [=> ];
+	For( j = 1, j <= N Rows( dtkey ), j++,
+		mykey = dtkey:imprcolname[j];
+		myname = dtkey:short_desc[j];
+		declist[mykey] = myname;
+	);
+	collist = dt << get column names( string );
+	For( j = 1, j <= N Items( collist ), j++,
+		name_org = collist[j];
+		If( Contains( declist, name_org ),
+			name_new = declist[name_org];
+			Column( dt_structure, name_org ) << set name( name_new ),
+			If( Contains(name_org, "IMPR" ), dt_structure << Delete Columns(name_org))
+		);
+	);
+	dtkey << Delete Columns("IMPRKEYNAME");
+	dtkey << Delete Columns("IMPRCOLNAME");
+);
+
+
+
+Close( dt_imprkey, nosave );
+Close( dt, nosave );

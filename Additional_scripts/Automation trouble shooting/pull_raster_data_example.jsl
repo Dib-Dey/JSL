@@ -1,0 +1,44 @@
+
+	SQL_string="select waf.lot,
+		   to_number(waf.wafer)as Wafer,
+		   die.x as Xdie,
+		   die.y as Ydie,
+		   t.test_counter as Test_Counter,
+		   tm.testmode_desc as Test_Mode,
+		   sum(t.defect_count) as defect_count,
+		   max(processing_date) as sort_date,
+		   operation,
+		   part
+		   
+	  from smartdb_d1d_1274_sram.sm_wafer     waf
+		   join smartdb_d1d_1274_sram.sm_die       die on (waf.wafer_seqno=die.wafer_seqno)
+		   
+		   join smartdb_d1d_1274_sram.sm_io_rollup t on (t.die_id_seqno = die.die_id_seqno)
+		   join smartdb.sm_defect_struct           rcg on (t.defect_index=rcg.defect_index)  
+		   join smartdb.sm_testmode_struct           tm on (t.testmode_index=tm.testmode_index)  
+		   inner join (
+				 select lot, wafer, max(resort_no) last_resort
+				 from smartdb_d1d_1274_sram.sm_wafer
+				 group by lot, wafer
+		   ) waf2 on (waf.lot = waf2.lot and waf.wafer = waf2.wafer and waf.resort_no = waf2.last_resort)
+		   
+	where
+	   die.is_latest_load = 'Y'
+	   AND  ((waf.lot LIKE 'D538701%'))
+	   and t.test_counter in ('21080','21081','21082','21083','21084','21085','21086','21087','22087','22088','22089','22090','22187','22188','22189','22190','23087','23088','23187','23188','26087','26088','26089','26090','26187','26188','26189','26190','27087','27088','27187','27188')
+	   and operation in ('7090','6188')
+	   
+	group by
+		waf.lot,
+		   waf.Wafer,
+		   die.x,
+		   die.y,
+		   t.test_counter,
+		   rcg.defect_group_desc,
+		   tm.testmode_desc,
+		   operation,
+		   part";
+		   
+connect_smart="DSN=OregonSMART";
+wait();
+dt_cc = Open Database( connect_smart, SQL_string, "prefetch" );

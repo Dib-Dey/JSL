@@ -1,0 +1,91 @@
+﻿/*Dibyendu Dey*/
+/* Different Box Options 
+b = Button Box("text", <script>);
+numbox = Number Edit Box(initialValue, <width>));
+cb = Check Box ({“item 1”, “item 2”, ...}, <script>);
+clb = Col List Box (<Data Table (<name>), <All>, <width(n)>,
+<maxSelected(n)>, <nlines(n)>, <script>, <MaxItems(n)),<MinItems(n)>, <character | numeric>, <onChange(expression)>);
+comboBox = Combo Box({“item 1”, “item 2”, ...}, <script>); //this is a dropdown menu
+h = H List Box(<displaybox args>);
+lb = Line Up Box (NCol(nc), <Spacing(pixels)>, displaybox args);
+pb = Panel Box (“title”, <displaybox args>);
+rb = Radio Box({“item 1”, “item 2”, ...}, <script>);
+t = Text Box(“text”);
+teb = Text Edit Box (“text”, Hint(“text”));
+v = V List Box(<displaybox args>);
+*/
+dt=current data table();
+current_selection_types = dt << Get Column Names(string);
+choice_list = {"yes", "no"};
+math_op = {" ", ">", ">=", "=", "<", "<="};
+select_rows = function({dt, value1, oper1, col_name, oper2, value2, marker, color, color_state}, {default local},
+
+	write("(");
+	show("select_rows", dt, value1, oper1, col_name, value2, oper2, marker, color_state);
+	write(")");
+	if ((col_name !="" & value2!="" & oper2!="" & (oper1=="" | value1=="")),
+		expr = "As Column(" || col_name || ")" || " " || oper2 || " " || value2,
+		(col_name !="" & value1!="" & oper1!="" & (oper2=="" | value2=="")),
+		expr = value1 || " " || oper1 || " " || "As Column(" || col_name || ")" ,
+		(col_name !="" & value1!="" & oper1!="" & oper2!="" & value2!=""),
+		expr = value1 || " " || oper1 || " " || "As Column(" || col_name || ")" || " " || oper2 || " " || value2 ,
+		expr = "Not Valid expression";
+	 );
+	expr = parse(expr);
+	show(expr);
+	show(marker);
+	if(marker =="",marker="x");
+	if(color =="", color="BLACK");
+	//cn = dt<<Get Column Names(string);
+	dt << Select Where(expr) << Markers (marker) << Colors(color);
+	if (color_state == 1, dt << Color Rows By Row State);
+//	dt << Select Where( agc_coef_st1 > 90 ) << Markers ( 5 );
+);
+
+dlg=New Window("Row Selectomatic", Border Box(Left(20), Right(20), Top(20), Bottom(20),
+		V List Box(	
+				H List Box(								
+						Line Up Box(Ncol(5),
+							b1 = Text Edit Box(""),
+							op1 = Combo Box(math_op),
+							
+							H List Box(
+							Text Box("Select Column: "),
+							col = Combo Box(current_selection_types), 
+							selected_col = col << GetSelected
+							),
+							
+							op2 = Combo Box(math_op),
+							b2 = Text Edit Box(""),	
+						),
+						Line Up Box(NCol(1),
+								Button Box( "OK",
+								                       select_rows(dt,
+																  b1<<Get Text(),
+																  op1 << Get Text(),
+																  selected_col ,
+																  op2 << Get Text(),
+																  b2 << Get Text(),
+																  m1 << Get Text(),
+																  c1 << Get Text(),
+																  rb << Get()
+												     			  ),
+											), 
+								Button Box( "Close", dlg<<CloseWindow ),
+								Button Box("Clear Current Row State", dt << Clear Row States());
+								),
+						),		
+			H List Box(
+						Panel Box("Default: x",
+							Text Box("Select marker: "),
+							m1 = Text Edit Box("")
+						),
+						Panel Box("Default: Black",
+							Text Box("Select Color: "),
+							c1 = Text Edit Box("")
+						),
+						Panel Box("Color Rows by Row State",rb = Radio Box(choice_list,<<Set(1))),
+					   ),
+					)
+			)	
+	);

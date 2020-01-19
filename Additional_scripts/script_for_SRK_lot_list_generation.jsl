@@ -1,0 +1,14 @@
+dt=Current Datatable();
+dt1=dt << Summary(Group (:LOT8)); 
+new="'";
+x=nrow();
+for(i =1 , i<=x, i++,
+	string=Column(dt1,"LOT8")[i];
+	if(i<x,new=concatto(new,string,"'",",","'"),new=concatto(new,string,"'"));
+);
+New Window("String to put in looking glass",
+	Text Edit Box(new,<< set width(1000), setNlines(10)),
+	Button Box ("OK"),
+	Button Box ("Cancel")
+		);
+close(dt1);

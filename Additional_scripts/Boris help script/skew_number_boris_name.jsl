@@ -1,0 +1,14 @@
+//Dibyendu Dey
+//Need to pull the etest skew data from WIJT
+//Stack all skew column name 
+
+dt=Current Datatable();
+
+  
+  	dt << New Column( "skew",
+	Character,
+	Nominal,
+	Formula( Num( Word( 1, Word( 4, :boris name, "_" ), "N" ) ) )
+	);
+
+

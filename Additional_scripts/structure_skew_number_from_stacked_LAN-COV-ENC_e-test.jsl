@@ -1,0 +1,11 @@
+dt=Current Datatable();
+dt << New Column( "Structure",
+	Character,
+	Nominal,
+	Formula(Word(1, Word(5, :Label, "_"), "N"))
+	);
+dt << New Column( "Structure #",
+	Numeric,
+	Continuous,
+	Formula(Num( :Structure ))
+	);

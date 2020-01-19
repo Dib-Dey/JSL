@@ -1,0 +1,18 @@
+dt = Current Data Table();
+//x=nrow(); // calculate total number of row 
+//String = Column( "oper_short_desc" )[1];
+StrLen = Length( String );
+For( i = 1, i <= x, i++,
+	(String = Column( "oper_short_desc" )[i] ; Entity = Column( "Entities" )[i] ; Next_Entity =
+	Column( "Entities" )[i + 1] ; If( i != 1,
+		Prev_Entity = Column( "Entities" )[i - 1]
+	) ; StrLen = Length( String ) ; fl = Substr( String, 1, 1 ) ; // substr (string, start, length)
+	tool = Substr( Entity, 1, 3 ) ; Next_tool = Substr( Next_Entity, 1, 3 ) ; Prev_tool = Substr( Prev_Entity, 1, 3 ) ;
+	If( tool == "LSA",
+		Show( Row() = i )
+	) ; If( tool == "LSA" & tool != Next_tool,
+		Current Data Table() << Select Rows( {i + 1} )
+	) ; If( tool == "LSA" & tool != Prev_tool,
+		Current Data Table() << Select Rows( {i - 1} )
+	) ; )
+);

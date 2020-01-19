@@ -1,0 +1,7 @@
+dt = current data table();
+
+Column(dt,1) << set name ("LOT");
+
+dt << New Column("LOT7",Formula(substr(:LOT,1,7) ),Eval Formula);
+
+dt << Move Selected Columns({"LOT7"}, To First);

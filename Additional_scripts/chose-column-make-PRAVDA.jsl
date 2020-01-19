@@ -1,0 +1,8 @@
+dt=Current Datatable();
+dt << New Column( "PRAVDA wafer list",
+	Character,
+	Nominal,
+	Formula(Char(:LOT7 || "," || Char(:WAFER)))
+	);
+	
+	

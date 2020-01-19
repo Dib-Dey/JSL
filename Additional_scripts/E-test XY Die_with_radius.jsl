@@ -1,0 +1,17 @@
+// Script to update the current data with Defect File Dice #, Radius and Sort Location
+// from Smart X_Y Radius.
+// Expects a table with :Xdie, :Ydie columns to match those against the Smart dt.
+dt = Current Data Table();
+
+If( try(smart_dt = Data Table("X74B dice list");, 1), 
+	smart_dt = Open("\\VMSPFSFSEG14\ptd_p1274_lya\Lot Analysis\X74BR\X74B dice list.jmp") 
+	);
+
+dt << Update(
+			With( Data Table( "X74B dice list" ) ),
+			Match Columns( :EtestX = :Etest X, :EtestY = :Etest Y ),
+			Add Columns from Update table( :Radius_mm, :Zone )
+		);
+
+Wait(0);
+Close(smart_dt, NoSave);

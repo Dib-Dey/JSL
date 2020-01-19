@@ -1,0 +1,10 @@
+dt = Current Data Table();
+x=nrow(); // calculate total number of row 
+For( i = 1, i <= x, i++,
+	(String = Column( "oper_long_desc" )[i] ; 
+	Entity = Column( "Entities" )[i]; 
+	//Contains("ABCDE","C") returns 3, which is numeric position of the 1st letter of the 2nd argument in 1st argument 
+	If( Contains(String,"RANDOMIZE"),Current Data Table() << Select Rows( {i + 1}));
+	If( Contains(String,"RANDOMIZE"),Current Data Table() << Select Rows( {i - 1}));
+)
+);

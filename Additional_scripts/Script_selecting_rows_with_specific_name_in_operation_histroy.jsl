@@ -1,0 +1,24 @@
+dt = Current Data Table();
+x=nrow(); // calculate total number of row 
+total_litho_op=0;
+For( i = 1, i <= x, i++,
+	(String = Column( "oper_long_desc" )[i] ; 
+	short=Column( "OPER_SHORT_DESC" )[i];
+	long=Column( "OPER_LONG_DESC" )[i];
+	Entity = Column( "Entities" )[i]; 
+	oper = Column( "Operation" )[i]; 
+	//Contains("ABCDE","C") returns 3, which is numeric position of the 1st letter of the 2nd argument in 1st argument 
+	//If( Contains(String,"RANDOMIZE"),Current Data Table() << Select Rows( {i + 1}));
+	//If( Contains(String,"RANDOMIZE"),Current Data Table() << Select Rows( {i - 1}));
+	//If( Contains(String,"SED"),Current Data Table() << Select Rows( {i}));
+	//If( Contains(String,"SED"),total_litho_op=total_litho_op+1);
+	//If( Contains(String,"SED"),show(String));
+	/*If( Contains(substr(String,0,1),"E"),Current Data Table() << Select Rows( {i}));*/
+	if( Contains(long,"DCCD"),Current Data Table() << Select Rows( {i}));
+	//If( Contains(oper,"114841"),Current Data Table() << Select Rows( {i}));
+	//If( Contains(oper,"114843"),Current Data Table() << Select Rows( {i}));
+	//If( Contains(oper,"114844"),Current Data Table() << Select Rows( {i}));
+	//If( Contains(oper,"114845"),Current Data Table() << Select Rows( {i}));
+)
+);
+show(total_litho_op);

@@ -1,0 +1,13 @@
+dt = currentdatatable();
+colnames = dt<<get selected columns();
+
+
+for(ii=1, ii<=NItems(colnames), ii++,
+	
+      cn = colnames[ii];
+      cn<<Get Data Type;
+      l=cn<<Get Lock(); cn<<Lock(0);
+	  if(cn<<Get Data Type=="Character",cn<<Set Each Value(If(length(cn[])==0, "NP", cn[])),
+		cn<<Get Data Type=="Numeric",cn<<Set Each Value(If(Is Missing(cn[]), 0, cn[])));
+      cn<<Lock(l);
+);

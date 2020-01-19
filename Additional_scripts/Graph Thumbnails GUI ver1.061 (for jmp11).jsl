@@ -1,0 +1,1191 @@
+//Graph Thumbnails generator GUI
+
+//Pedro Zapata <pedro.j.zapata@intel.com>, PTD LYA 
+//Based on the contourmap GUI script by Valur Gudmundsson <valur.gudmundsson@intel.com>, PTD LYA
+
+
+//********************Notes/ToDo********************
+//add warning when no table available
+
+Names Default To Here( 0 );
+dt = Current Data Table();
+name = dt << get name();
+outputList = {"Single-row", "Matrix"};
+outputMode = {"Journal all generated graphs", "Single window with merged graphs (interactive)", "Individual window per graph (interactive)"};
+scaleDir = {"Vertical", "Horizontal"};
+themeList = {"Green to Black to Red", "Green to White to Red", "White to Black", "Blue to Gray to Red", "Blue to Green to Red", "Spectral", "Jet"};
+scaleType = {"Discrete", "Continuous"};
+barStyle = {"Stacked", "Side by side"};
+barSummSt = {"Mean", "Min", "Max", "N", "Sum", "% of total"};
+
+clusterDlg = New Window( "Graph Thumbnails",
+	Border Box( Left( 5 ), top( 2 ),
+		V List Box(
+			H List Box(
+				V List Box(
+				
+					//select columns
+					Panel Box( "select Columns", colListData = Col List Box( All, width( 359 ), nLines( Min( N Col( dt ), 13 ) ) ) ), 
+					
+					//Options
+					Panel Box( "Graph types/options",
+						TabB = Tab Box(
+						
+						//Contourmaps tab
+							"Contourmaps",
+							V List Box(
+								H List Box(
+									V List Box(
+										Panel Box( "Output arrangement", outputObjC = Radio Box( outputList, <<set( 1 ) ) ),
+										Panel Box( "Scale options",
+											outputObjC_B = Radio Box( scaleDir, <<set( 1 ) ),
+											reverseC = Check Box( "Reverse scale colors", <<set( 0 ) )
+										)
+									),
+									V List Box(
+										Panel Box( "Contour options",
+											cThemeC = Combo Box( themeList, <<set( 6 ) ),
+											Text Box( "" ),
+											H List Box( Text Box( " # of contours" ), nContour = Text Edit Box( "Auto" ) ),
+											Text Box( "Contour thresholds: \!r\!n(cut off extreme values)" ),
+											H List Box(
+												V List Box( Text Box( "Min value:" ), minValue = Text Edit Box( "-1e+99" ) ),
+												Text Box( "		 " ),
+												V List Box( Text Box( "Max value:" ), maxValue = Text Edit Box( "1e+99" ) )
+											)
+										)
+									)
+								),
+								showP = Check Box( "Show points in contourmaps", <<set( 0 ) ),
+								dummyVal = Check Box( "Force contourmap for constant value wafers (\!"dummy value\!")", <<set( 1 ) )
+							), 
+							
+							//Points tab
+							"Points",
+							V List Box(
+								H List Box(
+									V List Box(
+										Panel Box( "Output arrangement", outputObjP = Radio Box( outputList, <<set( 1 ) ) ),
+										Panel Box( "Scale options", outputObjP_B = Radio Box( scaleDir, <<set( 1 ) ) )
+									),
+									V List Box(
+										Panel Box( "Scale color",
+											outputObjP_C = Radio Box( scaleType, <<set( 1 ) ),
+											Text Box( "		 " ), 
+											//text box( "Continuous scale available only \!r\!nfor numeric Y-variables" ),
+											Text Box( "Continuous mode options:" ),
+											cThemeP = Combo Box( themeList, <<set( 4 ) ),
+											reverseP = Check Box( "Reverse scale colors", <<set( 0 ) )
+										)
+									)
+								),
+								Text Box(
+									"Note: \!"Points\!" thumbnails are mainly intented for wafermaps \!r\!n            for Y by X thumbnails use \!"Lines\!" graph type"
+								), 
+
+							), 
+							
+							//Lines tab
+							"Lines",
+							V List Box(
+								H List Box(
+									Panel Box( "Output arrangement", outputObjL = Radio Box( outputList, <<set( 1 ) ) ),
+									Panel Box( "Plot options",
+										lineSpline = Check Box( "Spline line", <<set( 1 ) ),
+										lineEachVal = Check Box( "Fit each value", <<set( 0 ) ),
+										pointShow = Check Box( "Show points", <<set( 1 ) ),
+										densityCont = Check Box( "Show density contour", <<set( 0 ) ),
+										boxP = Check Box( "Show box plot \!r\!n(categorical X axis)", <<set( 1 ) )
+									)
+								)
+							), 
+							
+							//Bars tab
+							"Bars",
+							V List Box(
+								H List Box(
+									V List Box(
+										Panel Box( "Output arrangement", outputObjB = Radio Box( outputList, <<set( 1 ) ) ),
+										Panel Box( "Scale options", outputObjB_B = Radio Box( scaleDir, <<set( 1 ) ) )
+									),
+									Panel Box( "summary statistic", summStB = Radio Box( barSummSt, <<set( 1 ) ) ),
+									Panel Box( "Bar type", outputObjB_C = Radio Box( barStyle, <<set( 1 ) ) )
+								),
+								OverlayB = Check Box(
+									"Overlay\!r\!nWhen selected the last element of the \!"X\!" field will be used \!r\!nas overlay variable (used for bar stacking and coloring)",
+									<<set( 0 )
+								), 
+
+							), 
+							
+							//Histograms tab
+							"Histograms",
+							V List Box(
+								H List Box(
+									Panel Box( "Output arrangement", outputObjH = Radio Box( outputList, <<set( 1 ) ) ),
+									Panel Box( "Histogram direction", outputObjH_B = Radio Box( scaleDir, <<set( 1 ) ) )
+								),
+								Text Box( "" ),
+								Text Box(
+									"Y: Variables of interest\!r\!nX: Frequency variable (optional). Frequency of occurrence of the Y values (useful for summarized data)"
+								), 
+
+							)
+						)
+					)
+				), 
+							
+				//Cast columns
+				Panel Box( "Cast selected columns into roles",
+					Lineup Box( N Col( 2 ), Spacing( 4 ),
+						Button Box( "Y", colListY << append( colListData << get selected ) ),
+						colListY = Col List Box( width( 200 ), nLines( 8 ), MinItems( 1 ), MaxItems( 25 ) ),
+						Button Box( "X", colListX << append( colListData << get selected ) ),
+						colListX = Col List Box( width( 200 ), nLines( 4 ), MaxItems( 25 ) ),
+						Button Box( "By", colListBy << append( colListData << get selected ) ),
+						colListBy = Col List Box( width( 200 ), nLines( 4 ), MaxItems( 25 ) ),
+						Button Box( "Vertical grouping", colListVG << append( colListData << get selected ) ),
+						colListVG = Col List Box( width( 200 ), nLines( 1 ), MaxItems( 1 ) ),
+						Text Box( "" ),
+						ExcEmpVg = Check Box( "Exclude empty/missing groups", <<set( 1 ) ),
+						Text Box( "" ),
+						Text Box( "Vertical grouping recommended ONLY\!r\!nfor single-row output arrangement" ),
+						Text Box( "" ),
+						Text Box( "" ),
+						Button Box( "Additional\!r\!nparameters", colListAP << append( colListData << get selected ) ),
+						colListAP = Col List Box( width( 200 ), nLines( 3 ) )
+					),
+					Panel Box( "Output mode", outputM = Radio Box( outputMode, <<set( 1 ) ) ),
+					subTables = Check Box( "Close generated subset tables if journaling output", <<set( 1 ) ),
+					order = Check Box( "Order by Wafer if using \!"Wafer\!" in the \!"By\!" field", <<set( 1 ) )
+				), 
+				
+				//Button actions
+				Panel Box( "Action",
+					Lineup Box( N Col( 1 ),
+						Button Box( "OK", 
+																	
+							//Read column roles
+							dY = colListY << get items();
+							dX = colListX << get items();
+							dB = colListBy << get items();
+							dVG = colListVG << get items();
+							dAP = colListAP << get items();
+							WaferOrder = order << get();
+												
+							//Global recall values
+							dBRecall = dB; //needed if ordering by wafer is used as it changes DB							
+							OutputMRecall = outputM << get();
+							subTablesRecall = subTables << get();
+							TabRecall = TabB << get selected();
+							ExcEmpVgRecall = ExcEmpVg << get();	
+							
+							//Create output window expression for interactive plots						
+							plotWin = Expr( New Window( Eval( Eval Expr( name ) || ", interactive graphs" ) ) );
+														
+							//Create new journal if journal output selected						
+							If( outputM << get() == 1,
+								outJ = New Window( Eval( Eval Expr( name ) || ", journal" ), <<journal )
+							);
+														
+							//Modify wafer column if "order by wafer" is selected							
+							Lindex = Contains( dB, "WAFER" ) + Contains( dB, "Wafer" ) + Contains( dB, "wafer" );
+							If( WaferOrder == 1 & Lindex != 0,
+								cc = "";
+								Try( cc = Column( dt, "Wafer(c)" ) );
+								If( cc == "",
+									dt << New Column( "Wafer(c)",
+										character,
+										formula(
+											If(
+												Length( Char( :WAFER ) ) == 3, Char( :WAFER ),
+												Length( Char( :WAFER ) ) == 2, "0" || Char( :WAFER ),
+												Length( Char( :WAFER ) ) == 1, "00" || Char( :WAFER )
+											)
+										),
+										eval formula
+									)
+								);
+								dB[Lindex] = "Wafer(c)";
+							);
+																				
+							//Create group category (merge all columns in "by" field)
+							dBnum = N Items( dB );
+							If( dBnum == 0,
+								dt << New Column( "Group category", character, set each value( "None" ) ),
+								dt << New Column( "Group category", character );
+								For( pp = 1, pp <= N Row( dt ), pp++,
+									rowVal = "";
+									For( qq = 1, qq <= dBnum, qq++,
+										If( qq == 1,
+											rowVal = Char( Column( dt, dB[qq] )[pp] ),
+											rowVal = rowVal || "." || Char( Column( dt, dB[qq] )[pp] )
+										);
+										Column( dt, "Group category" )[pp] = rowVal;
+									);
+								);
+							);
+																					
+							//Determine number of thumbnails to be plotted						
+							grpsumm = dt << summary( Group( :name( "Group category" ) ), Link to original data table( 0 ) );
+							nGroups = N Rows( grpsumm << get rows where( :name( "N rows" ) != 0 ) );
+							Close( grpsumm, no save );
+							
+							//Remove thumbnails associated with empty vertical groups if selected 
+							If( dVG != {} & ExcEmpVgRecall == 1,
+								vgrpsumm = dt << summary( Group( :name( "Group category" ), Eval( dVG[1] ) ), Link to original data table( 0 ) );
+								nGroups = N Rows( vgrpsumm << get rows where( :name( "N rows" ) != 0 ) ) - N Rows(
+									vgrpsumm << get rows where( Is Missing( Column( vgrpsumm, dVG[1] )[] ) != 0 & :name( "N rows" ) != 0 )
+								);
+								Close( vgrpsumm, no save );
+							);
+																		
+							//Calculate thumbnail size based on number of plots and arrangement type							
+							If(
+								TabRecall == 1, dispMode = outputObjC << get(),
+								TabRecall == 2, dispMode = outputObjP << get(),
+								TabRecall == 3, dispMode = outputObjL << get(),
+								TabRecall == 4, dispMode = outputObjB << get(),
+								TabRecall == 5, dispMode = outputObjH << get()
+							);
+							If( dispmode == 1, 									
+								//single-row arrangement
+								//Define plot width for a correct thumbnail aspect ratio depending on the number of plots and vertical grouping (mainly for contourmap thumbnails)									
+								If( dVG == {},
+									plotHeightS = 198;
+									plotWidthS = 36 + (nGroups * 112);
+								, 
+									//Calculate number of active vertical group categories (removes excluded and empty groups)
+									vgrpsummB = dt << summary( Group( Eval( dVG[1] ) ), Link to original data table( 0 ) );
+									nVGroups = N Rows( vgrpsummB << get rows where( :name( "N rows" ) != 0 ) ) -
+									N Rows(
+										vgrpsummB << get rows where( Is Missing( Column( vgrpsummB, dVG[1] )[] ) != 0 & :name( "N rows" ) != 0 )
+									);
+									Close( vgrpsummB, no save );
+									plotHeightS = 198 + (102 * (nVGroups - 1));
+									plotWidthS = 74 + (nGroups * 112);
+								)
+							, 
+								//Matrix arrangement 
+								//Define plot width and height for proper aspect ratio (mainly for contourmap thumbnails)
+								//Custom heuristic calculation based on the number of thumbnails to be generated as wrap function does not allow selecting number of cols and rows in the matrix
+								cCols = Floor( Root( nGroups, 2 ) );
+								cRows = Ceiling( nGroups / cCols );
+								If( nGroups == 3 | nGroups == 7 | nGroups == 8 | nGroups == 15, 
+									//cAspectRatio = 1,
+									//cAspectRatio = cCols / cRows
+									cCols = cCols + 1;
+									cRows = cRows - 1;
+								);
+								If(
+									nGroups == 1,
+										plotWidthM = 148;
+										plotHeightM = 191;,
+									nGroups == 2,
+										plotWidthM = 260;
+										plotHeightM = 191;, 
+									//plotWidthM = Round( 643 * cAspectRatio + 67, 0 );
+									//plotHeightM = 800;
+									plotWidthM = 36 + (cCols * 112);
+									plotHeightM = 191 + (115 * (cRows - 1));
+									
+								);
+							);							
+						
+												
+													
+							//--------------- Plotting ---------------	
+												
+							If(
+								//************* Contourmaps *************
+								TabRecall == 1,  							
+								
+									If( N Items( dY ) == 0 | N Items( dX ) < 2,
+										outJ << close window( no save );
+										Throw( Dialog( "Required fields not specified		" ) );
+									); //Avoids crashing jmp if no fields are entered
+									
+									If( N Items( dX ) > 2,
+										outJ << close window( no save );
+										Throw( Dialog( "Maximum number of X items exceeded		" ) );
+									);
+									
+									//check data type to avoid crashing jmp
+									dC = dX || dY;
+									For( nn = 1, nn <= N Items( dC ), nn++,
+										If( Column( dt, dC[nn] ) << get data type != "Numeric",
+											outJ << close window( no save );
+											Throw( Dialog( "Wrong data type. Only numeric XY columns allowed for \!"contourmaps\!"		" ) );
+										)
+									);
+									
+																											
+									Sdirection = (outputObjC_B << get()) - 1;
+									minNum = Num( minValue << get text() );
+									maxNum = Num( maxValue << get text() );
+									Theme = themeList[cThemeC << get()];
+									ThemeRecall = cThemeC << get();
+									scaleCdir = reverseC << get();
+									dummyRecall = dummyVal << get();
+									showPRecall = showP << get();
+															
+									If( nContour << get text() == "Auto",
+										nContour = 0,
+										nContour = Num( nContour << get text() )
+									);							
+											
+											
+									dt << select all rows();
+									If( outputM << get() == 2 | outputM << get() == 3,
+										dtSub = dt << subset(
+											columns( Eval( dB ), Eval( dY ), Eval( dX ), Eval( dVG ), :name( "Group category" ), Eval( dAP ) )
+										);
+										dtSub << set name( name || ", subset for contourmap thumbnails" );
+									,
+										dtSub = dt << subset( columns( Eval( dB ), Eval( dY ), Eval( dX ), Eval( dVG ), :name( "Group category" ) ) );
+										dtSub << set name( name || ", subset for contourmap thumbnails" );
+									);
+									
+									//Exclude empty vertical grouping categories
+									If( dVG != {} & ExcEmpVgRecall == 1,
+										Try(
+											For Each Row(
+												If( Is Missing( Column( dtSub, dVG[1] )[] ) != 0,
+													Row State() = Combine States( Hidden State( 1 ), Excluded State( 1 ) )
+												)
+											)
+										)
+									);
+														
+									//Close dialog window before plotting			
+									clusterDlg << close window;
+							
+									//generate plot strings
+									For( ii = 1, ii <= N Items( dY ), ii++, 	
+							
+										//set contours max and min values (contour thresholding)
+										dtSub << New Column( Eval( dY[ii] || " (t)" ),
+											numeric,
+											set each value(
+												If(
+													Column( dtSub, dY[ii] )[] < minNum, minNum,
+													Column( dtSub, dY[ii] )[] > maxNum, maxNum,
+													Column( dtSub, dY[ii] )[]
+												)
+											)
+										);
+									
+										//force contourmap generation in wafers with constant values (create dummy point)
+										If( dummyRecall == 1,
+											dummyA = dtSub << summary(
+												Group( :Group category, Eval( dY[ii] || " (t)" ) ),
+												Link to original data table( 0 )
+											);
+											dummyB = dummyA << summary( Group( :Group category ), Link to original data table( 0 ) );
+											nConstantCat = N Rows( dummyB << get rows where( :name( "N rows" ) == 1 ) );
+											If( nConstantCat != 0,
+												Try( dummyB << select where( :name( "N rows" ) == 1 ) << invert row selection() << delete rows());
+												For( nn = 1, nn <= nConstantCat, nn++,
+													constantCat = Column( dummyB, "Group category" )[nn];
+													rowL = dtSub << get rows where( :name( "Group category" ) == constantCat );
+													ColDummy = Eval( dY[ii] || " (t)" );
+													Column( dtSub, ColDummy )[rowL[1]] = Column( dtSub, ColDummy )[rowL[1]] +
+													Quantile( 0.1, Column( dummyA, ColDummy ) << get values ) * 0.001;
+												);
+											);
+											Close( dummyA, no save );
+											Close( dummyB, no save );
+										);						
+																											
+										//Contourmap plot expression 
+										plotObj = Name Expr(
+											dtSub << graph builder(
+												Auto Stretching( 0 ),
+												Size( __W__, __H__ ),
+												Show Control Panel( 0 ),
+												__VAR__,
+												__EE__,
+												SendToReport( __STR__, Dispatch( {}, "graph title", TextEditBox, {set Text( __TX__ )} ), __SPD__ )
+											)
+										);
+										
+										If( dVG == {},
+											Substitute Into( plotObj,
+												Expr( __VAR__ ),
+													Parse( "Variables( X( dX[1] ), Y( dX[2] ), GW( __GX__, Size( __S__ ) ), Color( __C__ ) )" ),
+												Expr( __GX__ ), Name Expr( As Column( dtSub, "Group category" ) )
+											),
+											Substitute Into( plotObj,
+												Expr( __VAR__ ),
+													Parse(
+														"Variables( X( dX[1] ), Y( dX[2] ), GW( __GX__, Size( __S__ ) ), Group Y(__GY__), Color( __C__ ) )"
+													),
+												Expr( __GX__ ), Name Expr( As Column( dtSub, "Group category" ) ),
+												Expr( __GY__ ), Name Expr( As Column( dVG[1] ) )
+											)
+										);										
+																							
+										Substitute Into( plotObj,
+											Expr( __C__ ), Name Expr( As Column( dtSub, Eval( dY[ii] || " (t)" ) ) ),
+											Expr( __TX__ ), Eval Expr( dY[ii] )
+										);
+										
+										If( showPRecall == 1,
+											Substitute Into( plotObj,
+												Expr( __EE__ ),
+													Parse(
+														"Elements(Contour( X, Y, Legend( 4 ), Number of Levels( nContour ), Color ),Points( X, Y, Color, Legend( 5 ) ))"
+													),
+												Expr( __SPD__ ), Parse( "Dispatch( {}, \!"400\!", LegendBox, {Orientation( \!"Horizontal\!" )} )" ),
+												Expr( __STR__ ),
+													Parse(
+														"Dispatch({},\!"400\!",ScaleBox,{Legend Model(4,Level Name( 0, \!"\!" ),Properties(0,{gradient({Width( 15 ), Reverse Colors( scaleCdir ), Horizontal( Sdirection ),Color Theme( Theme )})})), Legend Model(5,Level Name( 0, \!"\!" ),Properties(0,{Transparency( 1 ), gradient({Color Theme( {\!"\!", 1, {\!"Black\!"}, {.}} ), Label Levels( [0] ),Width( 15 )})})) })"
+													)
+											),
+											Substitute Into( plotObj,
+												Expr( __EE__ ),
+													Parse( "Elements(Contour( X, Y, Legend( 4 ), Number of Levels( nContour ), Color ))" ),
+												Expr( __SPD__ ), "",
+												Expr( __STR__ ),
+													Parse(
+														"Dispatch({},\!"400\!",ScaleBox,{Legend Model(4,Properties(0,{gradient({Width( 15 ), Reverse Colors( scaleCdir ), Horizontal( Sdirection ),Color Theme( Theme )})}))})"
+													)
+											)
+										);																		
+																	
+										If( dispmode == 1, 
+										 	//single-row arrangement							
+											Substitute Into( plotObj,
+												Expr( GW ), Expr( Group X ),
+												Expr( __W__ ), plotWidthS,
+												Expr( __H__ ), plotHeightS,
+												Expr( __S__ ), 41
+											)
+										, 										
+											//Matrix arrangement											
+											Substitute Into( plotObj,
+												Expr( GW ), Expr( Wrap ),
+												Expr( __W__ ), plotWidthM,
+												Expr( __H__ ), plotHeightM,
+												Expr( __S__ ), 14
+											)
+										);									
+																		
+										If( outputM << get() == 3,
+											Eval( plotObj ),
+											Insert Into( plotWin, Name Expr( plotObj ) )
+										);
+									);, 
+								
+								
+								//************* Points *************
+								TabRecall == 2,  
+								
+									If( N Items( dY ) == 0 | N Items( dX ) == 0,
+										outJ << close window( no save );
+										Throw( Dialog( "Required fields not specified		" ) );
+									); //Avoids crashing jmp if no fields are entered
+									
+									If( N Items( dX ) > 2,
+										outJ << close window( no save );
+										Throw( Dialog( "Maximum number of X items exceeded		" ) );
+									);
+									
+									Sdirection = (outputObjP_B << get()) - 1;
+									scaleCdir = reverseP << get();
+									scaleColorM = outputObjP_C << get();
+									Theme = themeList[cThemeP << get()];
+									ThemeRecall = cThemeP << get();
+									
+									//check data type to avoid crashing jmp
+									For( nn = 1, nn <= N Items( dX ), nn++,
+										If( Column( dt, dX[nn] ) << get data type != "Numeric",
+											outJ << close window( no save );
+											Throw( Dialog( "Wrong data type. Only numeric X columns allowed for \!"points\!" 		" ) );
+										)
+									);																						
+
+									If( scaleColorM == 2,
+										For( nn = 1, nn <= N Items( dY ), nn++,
+											If( Column( dt, dY[nn] ) << get data type != "Numeric",
+												outJ << close window( no save );
+												Throw( Dialog( "Wrong data type. Only numeric Y columns allowed for continuous scale option 		" ) );
+											)
+										)
+									);
+											
+											
+									dt << select all rows();
+									If( outputM << get() == 2 | outputM << get() == 3,
+										dtSub = dt << subset(
+											columns( Eval( dB ), Eval( dY ), Eval( dX ), Eval( dVG ), :name( "Group category" ), Eval( dAP ) )
+										);
+										dtSub << set name( name || ", subset for contourmap thumbnails" );
+									,
+										dtSub = dt << subset( columns( Eval( dB ), Eval( dY ), Eval( dX ), Eval( dVG ), :name( "Group category" ) ) );
+										dtSub << set name( name || ", subset for contourmap thumbnails" );
+									);
+									
+									//Exclude empty vertical grouping categories
+									If( dVG != {} & ExcEmpVgRecall == 1,
+										Try(
+											For Each Row(
+												If( Is Missing( Column( dtSub, dVG[1] )[] ) != 0,
+													Row State() = Combine States( Hidden State( 1 ), Excluded State( 1 ) )
+												)
+											)
+										)
+									);
+														
+									//Close dialog window before plotting			
+									clusterDlg << close window;
+							
+									//generate plot strings
+									For( ii = 1, ii <= N Items( dY ), ii++, 	
+																				
+										//Points plot expression
+										plotObj = Name Expr(
+											dtSub << graph builder(
+												Auto Stretching( 0 ),
+												Size( __W__, __H__ ),
+												Show Control Panel( 0 ),
+												__VAR__,
+												Elements( Points( X, Y, Legend( 4 ), Color ) ),
+												SendToReport( __STR__, Dispatch( {}, "graph title", TextEditBox, {set Text( __TX__ )} ), )
+											)
+										);
+																				
+										If( dVG == {},
+											Substitute Into( plotObj,
+												Expr( __VAR__ ),
+													Parse( "Variables( X( dX[1] ), Y( dX[2] ), GW( __GX__, Size( __S__ ) ), OC( __C__ ) )" ),
+												Expr( __GX__ ), Name Expr( As Column( dtSub, "Group category" ) )
+											),
+											Substitute Into( plotObj,
+												Expr( __VAR__ ),
+													Parse(
+														"Variables( X( dX[1] ), Y( dX[2] ), GW( __GX__, Size( __S__ ) ), Group Y(__GY__), OC( __C__ ) )"
+													),
+												Expr( __GX__ ), Name Expr( As Column( dtSub, "Group category" ) ),
+												Expr( __GY__ ), Name Expr( As Column( dVG[1] ) )
+											)
+										);			
+																				
+										Substitute Into( plotObj,
+											Expr( __C__ ), Name Expr( As Column( dtSub, Eval( dY[ii] ) ) ),
+											Expr( __TX__ ), Eval Expr( dY[ii] )
+										);
+																				
+										//discrete or continouos color scale
+										If( scaleColorM == 1, 
+											//discrete
+											Substitute Into( plotObj,
+												Expr( OC ), Expr( Overlay ),
+												Expr( __STR__ ), Parse( "Dispatch( {}, \!"400\!", LegendBox, {Orientation( __HV__ )})" )
+											);
+											If( Sdirection == 0,
+												Substitute Into( plotObj, Expr( __HV__ ), "Vertical" ),
+												Substitute Into( plotObj, Expr( __HV__ ), "Horizontal" )
+											);
+										, 
+											//continuous
+											Substitute Into( plotObj,
+												Expr( OC ), Expr( Color ),
+												Expr( __STR__ ),
+													Parse(
+														"Dispatch({}, \!"400\!", ScaleBox, {Legend Model(4, Properties(0, {gradient( {Width( 15 ), Reverse Colors( __SC__ ), Horizontal( __SD__ ), Color Theme( __T__ )} )}))})"
+													),
+												Expr( __SD__ ), Sdirection,
+												Expr( __SC__ ), scaleCdir,
+												Expr( __T__ ), Theme
+											)
+										);
+									
+										If( dispmode == 1, 
+											//single-row arrangement
+											Substitute Into( plotObj,
+												Expr( GW ), Expr( Group X ),
+												Expr( __W__ ), plotWidthS,
+												Expr( __H__ ), plotHeightS,
+												Expr( __S__ ), 41
+											)
+										, 										
+											//Matrix arrangement 										
+											Substitute Into( plotObj,
+												Expr( GW ), Expr( Wrap ),
+												Expr( __W__ ), plotWidthM,
+												Expr( __H__ ), plotHeightM,
+												Expr( __S__ ), 14
+											)
+										);
+																		
+										If( outputM << get() == 3,
+											Eval( plotObj ),
+											Insert Into( plotWin, Name Expr( plotObj ) )
+										);
+									);, 
+									
+									
+								//************* Lines *************
+								TabRecall == 3, 
+								
+									If( N Items( dY ) == 0 | N Items( dX ) == 0,
+										outJ << close window( no save );
+										Throw( Dialog( "Required fields not specified		" ) );
+									); //Avoids crashing jmp if no fields are entered
+									
+									splineL = lineSpline << get();
+									eachValL = lineEachVal << get();
+									pShowL = pointShow << get();
+									densityCL = densityCont << get();
+									boxPR = boxP << get();														
+									
+											
+									dt << select all rows();
+									If( outputM << get() == 2 | outputM << get() == 3,
+										dtSub = dt << subset(
+											columns( Eval( dB ), Eval( dY ), Eval( dX ), Eval( dVG ), :name( "Group category" ), Eval( dAP ) )
+										);
+										dtSub << set name( name || ", subset for contourmap thumbnails" );
+									,
+										dtSub = dt << subset( columns( Eval( dB ), Eval( dY ), Eval( dX ), Eval( dVG ), :name( "Group category" ) ) );
+										dtSub << set name( name || ", subset for contourmap thumbnails" );
+									);
+									dtSub << set name( name || ", subset for point thumbnails" );
+									
+									//Exclude empty vertical grouping categories
+									If( dVG != {} & ExcEmpVgRecall == 1,
+										Try(
+											For Each Row(
+												If( Is Missing( Column( dtSub, dVG[1] )[] ) != 0,
+													Row State() = Combine States( Hidden State( 1 ), Excluded State( 1 ) )
+												)
+											)
+										)
+									);
+																							
+									//Close dialog window before plotting			
+									clusterDlg << close window;
+				
+									//generate plot strings
+									For( jj = 1, jj <= N Items( dX ), jj++, 
+									
+										For( ii = 1, ii <= N Items( dY ), ii++, 	
+											
+											//Lines plot expression
+											plotObj = Name Expr(
+												dtSub << graph builder(
+													Auto Stretching( 0 ),
+													Size( __W__, __H__ ),
+													Show Control Panel( 0 ),
+													__VAR__,
+													__EE__,
+													SendToReport( __STR__, Dispatch( {}, "graph title", TextEditBox, {set Text( __TX__ )} ), )
+												)
+											);																																		
+											
+											If( dVG == {},
+												Substitute Into( plotObj,
+													Expr( __VAR__ ), Parse( "Variables( X( __X__ ), Y( __Y__ ), GW( __GX__, Size( __S__ ) ) )" )
+												),
+												Substitute Into( plotObj,
+													Expr( __VAR__ ),
+														Parse( "Variables( X( __X__ ), Y( __Y__ ), GW( __GX__, Size( __S__ ) ), Group Y(__GY__) )" ),
+													Expr( __GY__ ), Name Expr( As Column( dVG[1] ) )
+												)
+											);			
+																													
+											Mtt = Column( dtSub, dX[jj] ) << get modeling type;
+											EEt = "";
+										
+											//Spline
+											If( splineL == 1 & Mtt == "Continuous",
+												EEt = EEt || "Smoother( X, Y, Legend( 2 ) ),"
+											);
+										
+											//Fit each value
+											If( eachValL == 1 & Mtt == "Continuous",
+												EEt = EEt || "Line( X, Y, Legend( 3 ), Row order( 0 ), summary Statistic( \!"Mean\!" ) ),"
+											);
+										
+											//Show points
+											If( pShowL == 1 /*| Mtt != "Continuous"*/,
+												EEt = EEt || "Points( X, Y, Legend( 1 ) ),"
+											);
+										
+											//Density
+											If( densityCL == 1,
+												EEt = EEt || "Contour( X, Y, Legend( 4 ), Number of Levels( 0 ) ),"
+											);
+										
+											//Boxplot
+											If( boxPR == 1 & Mtt != "Continuous",
+												EEt = EEt || "Box Plot(X,Y,Legend( 7 ),Jitter( 1 ),Outliers( 1 ),Box Style( \!"Outlier\!" )),";
+												Substitute Into( plotObj,
+													Expr( __STR__ ),
+														Parse(
+															"Dispatch({},\!"400\!",ScaleBox,{Legend Model( 7, Properties( 0, {Line Color( 19 )}))})"
+														)
+												);
+											,
+												Substitute Into( plotObj, Expr( __STR__ ), "" )
+											);
+										
+											EEt = "Elements(" || EEt || ")";
+										
+											Substitute Into( plotObj,
+												Expr( __GX__ ), Name Expr( As Column( dtSub, "Group category" ) ),
+												Expr( __X__ ), Name Expr( As Column( dtSub, Eval( dX[jj] ) ) ),
+												Expr( __Y__ ), Name Expr( As Column( dtSub, Eval( dY[ii] ) ) ),
+												Expr( __TX__ ), Eval Expr( dY[ii] ),
+												Expr( __EE__ ), Parse( EEt )
+											);
+																			
+											If( dispmode == 1, 
+												//single-row arrangement
+												Substitute Into( plotObj,
+													Expr( GW ), Expr( Group X ),
+													Expr( __W__ ), plotWidthS,
+													Expr( __H__ ), plotHeightS,
+													Expr( __S__ ), 41
+												)
+											, 										
+												//Matrix arrangement 										
+												Substitute Into( plotObj,
+													Expr( GW ), Expr( Wrap ),
+													Expr( __W__ ), plotWidthM,
+													Expr( __H__ ), plotHeightM,
+													Expr( __S__ ), 14
+												)
+											);
+																		
+											If( outputM << get() == 3,
+												Eval( plotObj ),
+												Insert Into( plotWin, Name Expr( plotObj ) )
+											);
+										)
+									);, 
+									
+									
+								//************* Bars *************
+								TabRecall == 4, 
+									
+									If( N Items( dY ) == 0 | N Items( dX ) == 0,
+										outJ << close window( no save );
+										Throw( Dialog( "Required fields not specified		" ) );
+									); //Avoids crashing jmp if no fields are entered
+																			
+									Sdirection = outputObjB_B << get();
+									barSv = outputObjB_C << get();
+									barSt = summStB << get();
+									OverlayRecall = OverlayB << get();																				
+										
+											
+									dt << select all rows();
+									If( outputM << get() == 2 | outputM << get() == 3,
+										dtSub = dt << subset(
+											columns( Eval( dB ), Eval( dY ), Eval( dX ), Eval( dVG ), :name( "Group category" ), Eval( dAP ) )
+										);
+										dtSub << set name( name || ", subset for contourmap thumbnails" );
+									,
+										dtSub = dt << subset( columns( Eval( dB ), Eval( dY ), Eval( dX ), Eval( dVG ), :name( "Group category" ) ) );
+										dtSub << set name( name || ", subset for contourmap thumbnails" );
+									);
+									
+									//Exclude empty vertical grouping categories
+									If( dVG != {} & ExcEmpVgRecall == 1,
+										Try(
+											For Each Row(
+												If( Is Missing( Column( dtSub, dVG[1] )[] ) != 0,
+													Row State() = Combine States( Hidden State( 1 ), Excluded State( 1 ) )
+												)
+											)
+										)
+									);
+																							
+									//Close dialog window before plotting			
+									clusterDlg << close window;
+				
+									//generate plot strings
+									For( jj = 1,
+										If( OverlayB << get() == 1 & N Items( dX ) != 1,
+											jj < N Items( dX ),
+											jj <= N Items( dX )
+										), jj++, 							
+									
+										For( ii = 1, ii <= N Items( dY ), ii++, 	
+																				
+											//Bars plot expression
+											plotObj = Name Expr(
+												dtSub << graph builder(
+													Auto Stretching( 0 ),
+													Size( __W__, __H__ ),
+													Show Control Panel( 0 ),
+													__VAR__,
+													Elements( Bar( X, Y, Legend( 4 ), Bar Style( __BS__ ), summary Statistic( __SS__ ) ) ),
+													SendToReport(
+														Dispatch( {}, "400", LegendBox, {Orientation( __HV__ )} ),
+														Dispatch( {}, "graph title", TextEditBox, {set Text( __TX__ )} ), 
+
+													)
+												)
+											);
+																				
+											If(
+												dVG == {} & OverlayB << get() == 0,
+													Substitute Into( plotObj,
+														Expr( __VAR__ ), Parse( "Variables( X( __X__ ), Y( __Y__ ), GW( __GX__, Size( __S__ ) ) )" )
+													), 
+													
+												dVG == {} & OverlayB << get() == 1,
+													Substitute Into( plotObj,
+														Expr( __VAR__ ),
+															Parse(
+																"Variables( X( __X__ ), Y( __Y__ ), GW( __GX__, Size( __S__ ) ), Overlay( __OL__ ) )"
+															),
+														Expr( __OL__ ), Name Expr( As Column( dtSub, Eval( dX[N Items( dX )] ) ) )
+													), 
+													
+												dVG != {} & OverlayB << get() == 0,
+													Substitute Into( plotObj,
+														Expr( __VAR__ ),
+															Parse(
+																"Variables( X( __X__ ), Y( __Y__ ), GW( __GX__, Size( __S__ ) ), Group Y(__GY__))"
+															),
+														Expr( __GY__ ), Name Expr( As Column( dVG[1] ) )
+													), 
+												
+												dVG != {} & OverlayB << get() == 1,
+													Substitute Into( plotObj,
+														Expr( __VAR__ ),
+															Parse(
+																"Variables( X( __X__ ), Y( __Y__ ), GW( __GX__, Size( __S__ ) ), Group Y(__GY__), Overlay( __OL__ ) )"
+															),
+														Expr( __OL__ ), Name Expr( As Column( dtSub, Eval( dX[N Items( dX )] ) ) ),
+														Expr( __GY__ ), Name Expr( As Column( dVG[1] ) )
+													)
+											);	
+																				
+											Substitute Into( plotObj,
+												Expr( __GX__ ), Name Expr( As Column( dtSub, "Group category" ) ),
+												Expr( __X__ ), Name Expr( As Column( dtSub, Eval( dX[jj] ) ) ),
+												Expr( __Y__ ), Name Expr( As Column( dtSub, Eval( dY[ii] ) ) ),
+												Expr( __TX__ ), Eval Expr( dY[ii] )
+											);
+											
+											If( Sdirection == 1,
+												Substitute Into( plotObj, Expr( __HV__ ), "Vertical" ),
+												Substitute Into( plotObj, Expr( __HV__ ), "Horizontal" )
+											);
+											
+											If( barSv == 1,
+												Substitute Into( plotObj, Expr( __BS__ ), "Stacked" ),
+												Substitute Into( plotObj, Expr( __BS__ ), "Side by side" )
+											);
+											
+											If(
+												barSt == 1, Substitute Into( plotObj, Expr( __SS__ ), "Mean" ),
+												barSt == 2, Substitute Into( plotObj, Expr( __SS__ ), "Min" ),
+												barSt == 3, Substitute Into( plotObj, Expr( __SS__ ), "Max" ),
+												barSt == 4, Substitute Into( plotObj, Expr( __SS__ ), "N" ),
+												barSt == 5, Substitute Into( plotObj, Expr( __SS__ ), "Sum" ),
+												barSt == 6, Substitute Into( plotObj, Expr( __SS__ ), "% of Total" )
+											);
+																					
+											If( dispmode == 1, 
+											//single-row arrangement
+												Substitute Into( plotObj,
+													Expr( GW ), Expr( Group X ),
+													Expr( __W__ ), plotWidthS,
+													Expr( __H__ ), plotHeightS,
+													Expr( __S__ ), 41
+												)
+											, 										
+											//Matrix arrangement 										
+												Substitute Into( plotObj,
+													Expr( GW ), Expr( Wrap ),
+													Expr( __W__ ), plotWidthM,
+													Expr( __H__ ), plotHeightM,
+													Expr( __S__ ), 14
+												)
+											);
+																		
+											If( outputM << get() == 3,
+												Eval( plotObj ),
+												Insert Into( plotWin, Name Expr( plotObj ) )
+											);
+										)
+									);, 
+									
+									
+								//************* Histograms *************
+								TabRecall == 5, 
+								
+									If( N Items( dY ) == 0,
+										outJ << close window( no save );
+										Throw( Dialog( "Required fields not specified		" ) );
+									); //Avoids crashing jmp if no fields are entered
+									
+									Hdirection = outputObjH_B << get();	
+									
+									
+									dt << select all rows();
+									If( outputM << get() == 2 | outputM << get() == 3,
+										dtSub = dt << subset(
+											columns( Eval( dB ), Eval( dY ), Eval( dX ), Eval( dVG ), :name( "Group category" ), Eval( dAP ) )
+										);
+										dtSub << set name( name || ", subset for contourmap thumbnails" );
+									,
+										dtSub = dt << subset( columns( Eval( dB ), Eval( dY ), Eval( dX ), Eval( dVG ), :name( "Group category" ) ) );
+										dtSub << set name( name || ", subset for contourmap thumbnails" );
+									);
+									
+									//Exclude empty vertical grouping categories
+									If( dVG != {} & ExcEmpVgRecall == 1,
+										Try(
+											For Each Row(
+												If( Is Missing( Column( dtSub, dVG[1] )[] ) != 0,
+													Row State() = Combine States( Hidden State( 1 ), Excluded State( 1 ) )
+												)
+											)
+										)
+									);
+																							
+									//Close dialog window before plotting			
+									clusterDlg << close window;
+				
+									//generate plot strings
+									For( jj = 1,
+										If( N Items( dX ) == 0,
+											jj <= 1,
+											jj <= N Items( dX )
+										), jj++, 							
+									
+										For( ii = 1, ii <= N Items( dY ), ii++, 	
+																				
+											//Histograms plot expression
+											plotObj = Name Expr(
+												dtSub << graph builder(
+													Auto Stretching( 0 ),
+													Size( __W__, __H__ ),
+													Show Control Panel( 0 ),
+													__VAR__,
+													Elements( Histogram( __XY__, Legend( 4 ) ) ),
+													SendToReport( Dispatch( {}, "graph title", TextEditBox, {set Text( __TX__ )} ), )
+												)
+											);	
+											
+											If( N Items( dX ) == 0, 
+											
+												If(
+													dVG == {} & Hdirection == 1,
+														Substitute Into( plotObj,
+															Expr( __VAR__ ), Parse( "Variables( X( __Y__ ), GW( __GX__, Size( __S__ ) ) )" ),
+															Expr( __XY__ ), Expr( X )
+														), 
+													
+													dVG == {} & Hdirection == 2,
+														Substitute Into( plotObj,
+															Expr( __VAR__ ), Parse( "Variables( Y( __Y__ ), GW( __GX__, Size( __S__ ) ) )" ),
+															Expr( __XY__ ), Expr( Y )
+														),  
+													
+													dVG != {} & Hdirection == 1,
+														Substitute Into( plotObj,
+															Expr( __VAR__ ),
+																Parse( "Variables( X( __Y__ ), GW( __GX__, Size( __S__ ) ), Group Y(__GY__))" ),
+															Expr( __XY__ ), Expr( X ),
+															Expr( __GY__ ), Name Expr( As Column( dVG[1] ) )
+														), 
+												
+													dVG != {} & Hdirection == 2,
+														Substitute Into( plotObj,
+															Expr( __VAR__ ),
+																Parse( "Variables( Y( __Y__ ), GW( __GX__, Size( __S__ ) ), Group Y(__GY__))" ),
+															Expr( __XY__ ), Expr( Y ),
+															Expr( __GY__ ), Name Expr( As Column( dVG[1] ) )
+														), 
+
+												)
+											,
+												If(
+													dVG == {} & Hdirection == 1,
+														Substitute Into( plotObj,
+															Expr( __VAR__ ),
+																Parse( "Variables( X( __Y__ ), GW( __GX__, Size( __S__ ) ), Frequency( __X__ ) )" ),
+															Expr( __X__ ), Name Expr( As Column( dtSub, Eval( dX[jj] ) ) ),
+															Expr( __XY__ ), Expr( X )
+														), 
+													
+													dVG == {} & Hdirection == 2,
+														Substitute Into( plotObj,
+															Expr( __VAR__ ),
+																Parse( "Variables( Y( __Y__ ), GW( __GX__, Size( __S__ ) ), Frequency( __X__ ) )" ),
+															Expr( __X__ ), Name Expr( As Column( dtSub, Eval( dX[jj] ) ) ),
+															Expr( __XY__ ), Expr( Y )
+														),  
+													
+													dVG != {} & Hdirection == 1,
+														Substitute Into( plotObj,
+															Expr( __VAR__ ),
+																Parse(
+																	"Variables( X( __Y__ ), GW( __GX__, Size( __S__ ) ), Group Y(__GY__), Frequency( __X__ ))"
+																),
+															Expr( __X__ ), Name Expr( As Column( dtSub, Eval( dX[jj] ) ) ),
+															Expr( __XY__ ), Expr( X ),
+															Expr( __GY__ ), Name Expr( As Column( dVG[1] ) )
+														), 
+												
+													dVG != {} & Hdirection == 2,
+														Substitute Into( plotObj,
+															Expr( __VAR__ ),
+																Parse(
+																	"Variables( Y( __Y__ ), GW( __GX__, Size( __S__ ) ), Group Y(__GY__), Frequency( __X__ ))"
+																),
+															Expr( __X__ ), Name Expr( As Column( dtSub, Eval( dX[jj] ) ) ),
+															Expr( __XY__ ), Expr( Y ),
+															Expr( __GY__ ), Name Expr( As Column( dVG[1] ) )
+														)
+												)
+											);
+											
+											Substitute Into( plotObj,
+												Expr( __GX__ ), Name Expr( As Column( dtSub, "Group category" ) ),
+												Expr( __Y__ ), Name Expr( As Column( dtSub, Eval( dY[ii] ) ) ),
+												Expr( __TX__ ), Eval Expr( dY[ii] )
+											);
+																				
+											If( dispmode == 1, 
+												//single-row arrangement
+												Substitute Into( plotObj,
+													Expr( GW ), Expr( Group X ),
+													Expr( __W__ ), plotWidthS,
+													Expr( __H__ ), plotHeightS,
+													Expr( __S__ ), 41
+												)
+											, 										
+												//Matrix arrangement 										
+												Substitute Into( plotObj,
+													Expr( GW ), Expr( Wrap ),
+													Expr( __W__ ), plotWidthM,
+													Expr( __H__ ), plotHeightM,
+													Expr( __S__ ), 14
+												)
+											);
+																		
+											If( outputM << get() == 3,
+												Eval( plotObj ),
+												Insert Into( plotWin, Name Expr( plotObj ) )
+											);
+										)
+									);
+							);
+														
+							//plot						
+							Try( plotWinB = Eval( plotWin ) );
+								
+							//journal plots if option selected
+							If( outputM << get() == 1,
+								plotWinB << journal Window
+							);
+							
+							Try( dt << delete columns( "Wafer(c)" ) );
+							Try( dt << delete columns( "Group category" ) );
+							
+							//Close subset tables if option selected
+							If( outputM << get() == 1 & subTables << get() == 1,
+								Close( dtSub, no save )
+							);
+						), 
+						
+						
+						Button Box( "Cancel",
+							Try( dt << delete columns( "Wafer(c)" ) );
+							Try( dt << delete columns( "Group category" ) );
+							clusterDlg << close window;
+						), 
+						
+						Text Box( " " ), 
+						
+						
+						Button Box( "Default",
+							If( TabB << get selected() == 1 | TabB << get selected() == 2,
+								Try( colListX << append( "X" ) );
+								Try( colListX << append( "Y" ) );
+								Try( colListX << append( "Xdie" ) );
+								Try( colListX << append( "Ydie" ) );
+								Try( colListX << append( "SMART Die X" ) );
+								Try( colListX << append( "SMART Die Y" ) );
+								Try( colListBy << append( "LOT" ) );
+								Try( colListBy << append( "WAFER" ) );
+							,
+								Try( colListBy << append( "LOT" ) );
+								Try( colListBy << append( "WAFER" ) );
+							)
+						), 
+						
+						
+						Button Box( "Remove",
+							colListY << remove selected();
+							colListX << remove selected();
+							colListBy << remove selected();
+							colListVG << remove selected();
+							colListAP << remove selected();
+						), 
+						
+
+						Button Box( "Recall",
+							colListX << append( dX );
+							colListY << append( dY );
+							colListBy << append( dBRecall );
+							colListVG << append( dVG );
+							colListAP << append( dAP );
+							order << set( 1, WaferOrder );
+							outputM << set( OutputMRecall );
+							subTables << set( 1, subTablesRecall );
+							TabB << set selected()(TabRecall);
+							ExcEmpVg << set( 1, ExcEmpVgRecall );
+														
+							If(
+								TabRecall == 1,
+									outputObjC << set( dispMode );
+									outputObjC_B << set( Sdirection + 1 );
+									cThemeC << set( ThemeRecall );
+									reverseC << set( 1, scaleCdir );
+									dummyVal << set( 1, dummyRecall );
+									showP << set( 1, showPRecall );
+									minValue << set text( Char( minNum ) );
+									maxValue << set text( Char( maxNum ) );,
+								TabRecall == 2,
+									outputObjP << set( dispMode );
+									outputObjP_B << set( Sdirection + 1 );
+									outputObjP_C << set( scaleColorM );
+									reverseP << set( 1, scaleCdir );
+									cThemeP << set( ThemeRecall );,
+								TabRecall == 3,
+									outputObjL << set( dispMode );
+									lineSpline << set( 1, splineL );
+									lineEachVal << set( 1, eachValL );
+									pointShow << set( 1, pShowL );
+									densityCont << set( 1, densityCL );
+									boxP << set( 1, boxPR );,
+								TabRecall == 4,
+									outputObjB << set( dispMode );
+									outputObjB_B << set( Sdirection );
+									outputObjB_C << set( barSv );
+									summStB << set( barSt );
+									OverlayB << set( 1, OverlayRecall );,
+								TabRecall == 5,
+									outputObjH << set( dispMode );
+									outputObjH_B << set( Hdirection );
+							);
+						)
+					)
+				)
+			)
+		)
+	)
+);
+
+{minValue, maxValue} << set width( 55 );
+nContour << set width( 52 );

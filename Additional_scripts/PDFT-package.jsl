@@ -1,0 +1,7 @@
+Clear Log();
+dt = Current Data Table();
+dt << New Column( "PDFT package",
+	Character,
+	Nominal,
+	Formula( If( Is Missing( :Name( "RECIPE@NTSC@CLEAN@119229" ) ) & Is Missing( :Name( "RECIPE@NTSC@CLEAN@124278" ) ), "26nm", "OLD" ) )
+);

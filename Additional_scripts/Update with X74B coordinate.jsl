@@ -1,0 +1,25 @@
+// Script to update the current data with Defect File Dice #, Radius and Sort Location
+// from Smart X_Y Radius.
+// Expects a table with :Xdie, :Ydie columns to match those against the Smart dt.
+//Dibyendu Dey
+//1/12/2017
+
+dt = Current Data Table();
+lstColNames = dt << Get Column Names(string);
+
+if(Contains(lstColNames, "Xdie" ) | Contains( lstColNames, "EtestX" )|Contains(lstColNames, "ETESTX" )|Contains(lstColNames, "SMARTX" ),
+smart_dt = Open( "\\VMSPFSFSEG14\ptd_p1274_lya\Lot Analysis\X74B\background\X74B dice list.jmp" ),New Window ( "Warning!", << Modal, Text Box ("There is no Xdie/EtestX/ETESTX/SMARTX column in table"), Button Box ("Ok")));
+
+For( i = 1, i <= N Items( lstColNames ), i++,
+	colName = lstColNames[i];
+	If(
+		Contains( colName, "Xdie" ), dt << Update( With( smart_dt ), Match Columns( :Xdie == :SMART Dice X, :Ydie == :SMART Dice Y )),
+		Contains( colName, "EtestX" ), dt << Update( With( smart_dt ), Match Columns( :EtestX == :Etest X, :EtestY == :Etest Y ) ),
+		Contains( colName, "ETESTX" ), dt << Update( With( smart_dt ), Match Columns( :ETESTX == :Etest X, :ETESTY == :Etest Y ) ),
+		Contains( colName, "SMARTX" ), dt << Update( With( smart_dt ), Match Columns( :SMARTX == :SMART Dice X, :SMARTY == ::SMART Dice Y))
+	);
+);
+dt << Move Selected Columns ({"Zone_SMART","Quarter"}, After("WAFER"));
+Wait( 0 );
+Close( smart_dt, NoSave );
+

@@ -1,0 +1,9 @@
+dt=current data table ();
+Klarity_X_offset=-18;
+Klarity_Y_offset=-5;
+dt << NewColumn("XDIE", Formula(
+       Floor( (:INDEX_X + eval(Klarity_X_offset))/3)
+));
+dt << NewColumn("YDIE", Formula(
+       :INDEX_Y + eval(Klarity_Y_offset)
+));

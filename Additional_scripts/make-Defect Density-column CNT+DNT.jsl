@@ -1,0 +1,101 @@
+﻿clear log();
+dt=current data table();
+
+x = column(current data table(), "DEVICE")[1]; 
+show (x);
+
+/* cnt  and dnt metric */
+if(x=="X74BR-M0M1",(dt<<new column("Chain fail @ CNT + DNT (R < 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M0M1@CTR@PCTFAIL") * (115 /478) + :Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M0M1@DNT@PCTFAIL") * (215 / 478))
+))); 
+
+if(x=="X74BR-M0M1",(dt<<new column("Comb fail @ CNT + DNT (R < 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M0M1@CTR@PCTFAIL") * (115 / 478) + :Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M0M1@DNT@PCTFAIL") * (215 / 478))
+))); 
+
+if(x=="X74BR-M1M2",(dt<<new column("Chain fail @ CNT + DNT (R < 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M1M2@CTR@PCTFAIL") * (115 /478) + :Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M1M2@DNT@PCTFAIL") * (215 / 478))
+))); 
+
+if(x=="X74BR-M1M2",(dt<<new column("Comb fail @ CNT + DNT (R < 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M1M2@CTR@PCTFAIL") * (115 / 478) + :Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M1M2@DNT@PCTFAIL") * (215 / 478))
+))); 
+
+if(x=="X74BR-M2M3",(dt<<new column("Chain fail @ CNT + DNT (R < 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M2M3@CTR@PCTFAIL") * (115 / 478) + :Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M2M3@DNT@PCTFAIL") * (215 / 478))
+))); 
+
+if(x=="X74BR-M2M3",(dt<<new column("Comb fail @ CNT + DNT (R < 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M2M3@CTR@PCTFAIL") * (115 / 478) + :Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M2M3@DNT@PCTFAIL") * (215 / 478))
+)));
+
+if(x=="X74BR-M3M4",(dt<<new column("Chain fail @ CNT + DNT (R < 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M3M4@CTR@PCTFAIL") * (115 / 478) + :Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M3M4@DNT@PCTFAIL") * (215 / 478))
+))); 
+
+if(x=="X74BR-M3M4",(dt<<new column("Comb fail @ CNT + DNT (R < 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M3M4@CTR@PCTFAIL") * (115 / 478) + :Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M3M4@DNT@PCTFAIL") * (215 / 478))
+)));
+
+if(x=="X74BR-M4M5",(dt<<new column("Chain fail @ CNT + DNT (R < 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M4M5@CTR@PCTFAIL") * (115 / 478) + :Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M4M5@DNT@PCTFAIL") * (215 / 478))
+))); 
+
+if(x=="X74BR-M4M5",(dt<<new column("Comb fail @ CNT + DNT (R < 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M4M5@CTR@PCTFAIL") * (115 / 478) + :Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M4M5@DNT@PCTFAIL") * (215 / 478))
+)));
+
+/* edge and extreme edge metric */
+
+if(x=="X74BR-M0M1",(dt<<new column("Chain fail @ EDG + XEDG (R > 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M0M1@EDG@PCTFAIL") * (95 /478) + :Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M0M1@XEDG@PCTFAIL") * (53 / 478))
+))); 
+
+if(x=="X74BR-M0M1",(dt<<new column("Comb fail @ EDG + XEDG (R > 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M0M1@EDG@PCTFAIL") * (95 / 478) + :Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M0M1@XEDG@PCTFAIL") * (53 / 478))
+)));
+
+if(x=="X74BR-M1M2",(dt<<new column("Chain fail @ EDG + XEDG (R > 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M1M2@EDG@PCTFAIL") * (95 /478) + :Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M1M2@XEDG@PCTFAIL") * (53 / 478))
+))); 
+
+if(x=="X74BR-M1M2",(dt<<new column("Comb fail @ EDG + XEDG (R > 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M1M2@EDG@PCTFAIL") * (95 / 478) + :Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M1M2@XEDG@PCTFAIL") * (53 / 478))
+))); 
+
+if(x=="X74BR-M2M3",(dt<<new column("Chain fail @ EDG + XEDG (R > 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M2M3@EDG@PCTFAIL") * (95 / 478) + :Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M2M3@XEDG@PCTFAIL") * (53 / 478))
+))); 
+
+if(x=="X74BR-M2M3",(dt<<new column("Comb fail @ EDG + XEDG (R > 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M2M3@EDG@PCTFAIL") * (95 / 478) + :Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M2M3@XEDG@PCTFAIL") * (53 / 478))
+)));
+
+if(x=="X74BR-M3M4",(dt<<new column("Chain fail @ EDG + XEDG (R > 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M3M4@EDG@PCTFAIL") * (95 / 478) + :Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M3M4@XEDG@PCTFAIL") * (53 / 478))
+))); 
+
+if(x=="X74BR-M3M4",(dt<<new column("Comb fail @ EDG + XEDG (R > 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M3M4@EDG@PCTFAIL") * (95 / 478) + :Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M3M4@XEDG@PCTFAIL") * (53 / 478))
+)));
+
+if(x=="X74BR-M4M5",(dt<<new column("Chain fail @ EDG + XEDG (R > 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M4M5@EDG@PCTFAIL") * (95 / 478) + :Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M4M5@XEDG@PCTFAIL") * (53 / 478))
+))); 
+
+if(x=="X74BR-M4M5",(dt<<new column("Comb fail @ EDG + XEDG (R > 120)",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M4M5@EDG@PCTFAIL") * (95 / 478) + :Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M4M5@XEDG@PCTFAIL") * (53 / 478))
+)));
+
+/* move all columns */
+dt << Move Selected Columns({"Chain fail @ CNT + DNT (R < 120)","Comb fail @ CNT + DNT (R < 120)","Chain fail @ EDG + XEDG (R > 120)","Comb fail @ EDG + XEDG (R > 120)"},After(“WAFER”));
+
+/*if(x=="X74BR-M2M3",(dt<<new column("PREHVQK DPW fail chains_all_combo@RECL@M2M3CNT+DNT-raster",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M2M3@CTR@PCTFAIL~sort") * (115 / 330) + :Name("DPW_PREHVQK:GTIA_CHN_ALL:COMBO@RECL@M2M3@DNT@PCTFAIL~sort") * (215 / 330))
+))); 
+
+if(x=="X74BR-M2M3",(dt<<new column("PREHVQK DPW fail combs_all_combo@RECL@M2M3CNT+DNT-raster",Numeric,Continuous,
+    formula(:Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M2M3@CTR@PCTFAIL~sort") * (115 / 330) + :Name("DPW_PREHVQK:GTIA_CMB_ALL:COMBO@RECL@M2M3@DNT@PCTFAIL~sort") * (215 / 330))
+))); 
+
+dt << Move Selected Columns({"PREHVQK DPW fail chains_all_combo@RECL@M2M3CNT+DNT-raster","PREHVQK DPW fail combs_all_combo@RECL@M2M3CNT+DNT-raster"},After(“WAFER”));*/

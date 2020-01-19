@@ -1,0 +1,275 @@
+Names Default To Here( 0 );
+
+//Pedro Zapata <pedro.j.zapata@intel.com>, PTD LYA
+//Valur Gudmundsson <valur.gudmundsson@intel.com>, PTD LYA
+
+dt = Current Data Table();
+name = dt << Get Name();
+nc = N Col( dt );
+outputList = {"Single row", "Matrix"};
+scaledir = {"Vertical", "Horizontal"};
+themeList = {"Green to Black to Red", "Green to White to Red", "White to Black", "Blue to Gray to Red", "Blue to Green to Red", "Spectral", "Jet"};
+
+clusterDlg = New Window( "Contour tumbnails",
+	Border Box( Left( 5 ), top( 2 ),
+		V List Box(
+			Text Box( "Plot contourmap thumbnails" ),
+			H List Box(
+				V List Box(
+				
+					//Select columns
+					Panel Box( "Select Columns", colListData = Col List Box( All, width( 395 ), nLines( Min( nc, 10 ) ) ) ), 
+					
+					//Options
+					Panel Box( "Options",
+						V List Box(
+							H List Box(
+								Panel Box( "Output arrangement", outputObj = Radio Box( outputList, <<Set( 1 ) ) ),
+								Panel Box( "Scale direction", outputObj_B = Radio Box( scaledir, <<Set( 1 ) ) ),
+								V List Box(
+									Panel Box( "Color theme", cTheme = Combo Box( themeList, <<set( 6 ) ) ),
+									V List Box( H List Box( Text Box( "	" ), Text Box( "# of contours" ), nContour = Text Edit Box( "Auto" ) ) ), 
+
+								)
+							),
+							H List Box(
+								V List Box( Text Box( "Min value:" ), minValue = Text Edit Box( "-1e20" ) ),
+								Text Box( "		" ),
+								V List Box( Text Box( "Max value:" ), maxValue = Text Edit Box( "1e20" ) )
+							)
+						)
+					)
+				), 
+							
+				//Cast columns
+				//*******************************change limits to allow any number of subgrouping elements
+				Panel Box( "Cast Selected Columns into Roles",
+					Lineup Box( N Col( 2 ), Spacing( 4 ),
+						Button Box( "Y", colListY << Append( colListData << GetSelected ) ),
+						colListY = Col List Box( width( 200 ), nLines( 12 ), MinItems( 1 ), MaxItems( 20 ), numeric ),
+						Button Box( "X", colListX << Append( colListData << GetSelected ) ),
+						colListX = Col List Box( width( 200 ), nLines( 2 ), MinItems( 2 ), MaxItems( 2 ), numeric ),
+						Button Box( "By", colListBy << Append( colListData << GetSelected ) ),
+						colListBy = Col List Box( width( 200 ), nLines( 3 ), MaxItems( 3 ), )
+					),
+					Text Box( "		" ),
+					order = Check Box( "Order by Wafer if using \!"Wafer\!" in the \!"By\!" field", <<Set( 1, 1 ) )
+				), 
+				
+				//Button action script assignment
+				Panel Box( "Action",
+					Lineup Box( N Col( 1 ),
+						Button Box( "OK", 
+										
+							
+							//Read settings values from user input interface
+							dC = colListY << GetItems();
+							dX = colListX << GetItems();
+							dB = colListBy << GetItems();
+							dBRecall = dB; //needed if ordering by wafer is used as it changes DB
+													
+							//Avoid crashing jmp if no fields are entered
+							If( N Items( dC ) == 0 & N Items( dX ) == 0 & N Items( db ) == 0,
+								Throw( Dialog( "At least one required field is not specified		" ) )
+							);
+							
+							minNum = Num( minValue << Get Text() );
+							maxNum = Num( maxValue << Get Text() );
+							dispMode = outputObj << Get();
+							Sdirection = (outputObj_B << Get()) - 1;
+							Theme = themeList[cTheme << get()];
+							ThemeRecall = cTheme << get();
+							WaferOrder = order << get();
+							
+							If( nContour << Get Text() == "Auto",
+								nContour = 0,
+								nContour = Num( nContour << Get Text() )
+							);							
+											
+							dt << Select all rows();
+							dtSub = dt << Subset( columns( Eval( dB ), Eval( dC ), Eval( dX ) ) );
+							dtSub << Set Name( name || ", subset for contourmap thumbnails" );
+							
+							//modify wafer column if ordering by column
+							Lindex = Contains( dB, "WAFER" ) + Contains( dB, "Wafer" ) + Contains( dB, "wafer" );							
+							
+							If( WaferOrder == 1 & Lindex != 0,
+								Column( dtSub, dB[Lindex] ) << set name( "WAFER" );
+								dtSub << New Column( "Wafer(c)",
+									character,
+									Formula(
+										If(
+											Length( Char( :WAFER ) ) == 3, Char( :WAFER ),
+											Length( Char( :WAFER ) ) == 2, "0" || Char( :WAFER ),
+											Length( Char( :WAFER ) ) == 1, "00" || Char( :WAFER )
+										)
+									),
+									eval formula
+								);
+								dB[Lindex] = "Wafer(c)";
+							);				
+							
+							dBnum = N Items( dB );
+							
+							//Create subgrouping single value (merge all subgrouping columns)
+							//*******************************change this part to concatenate any level of subgrouping
+							If(
+								dBnum == 0, dtSub << New Column( "Group category", character, set each value( "None" ) ),
+								dBnum == 1, dtSub << New Column( "Group category", character, set each value( Char( Column( dtSub, dB[1] )[] ) ) ),
+								dBnum == 2,
+									dtSub << New Column( "Group category",
+										character,
+										set each value( Char( Column( dtSub, dB[1] )[] ) || "." || Char( Column( dtSub, dB[2] )[] ) )
+									),
+								dBnum == 3,
+									dtSub << New Column( "Group category",
+										character,
+										set each value(
+											Char( Column( dtSub, dB[1] )[] ) || "." || Char( Column( dtSub, dB[2] )[] ) || "." ||
+											Char( Column( dtSub, dB[3] )[] )
+										)
+									)
+							);
+							
+							//Determine number of wafermaps to be plotted
+							grpsumm = dtSub << Summary( Group( :Name( "Group category" ) ) );
+							nGroups = N Rows( grpsumm << get rows where( :name( "N rows" ) != 0 ) );
+							Close( grpsumm, no save );		
+							
+							
+							For( ii = 1, ii <= N Items( dC ), ii++, 	
+							
+							//Set contours max and min values
+								dtSub << New Column( Eval( dC[ii] || " (t)" ),
+									numeric,
+									set each value(
+										If(
+											Column( dtSub, dC[ii] )[] < minNum, minNum,
+											Column( dtSub, dC[ii] )[] > maxNum, maxNum,
+											Column( dtSub, dC[ii] )[]
+										)
+									)
+								);
+
+
+								If( dispmode == 2, 
+								
+									//Define plot width and height to keep proper contourmap aspect ratio in matrix arrangement
+									//calculated based on a heuristic approach using the number of contourmaps to be generated
+									cCols = Floor( nGroups / Root( nGroups, 2 ) );
+									cRows = Ceiling( nGroups / cCols );
+									If( nGroups == 3 | nGroups == 7 | nGroups == 8 | nGroups == 15,
+										cAspectRatio = 1,
+										cAspectRatio = cCols / cRows
+									);
+									If(
+										nGroups == 1,
+											plotWidth = 177;
+											plotHeight = 247;,
+										nGroups == 2,
+											plotWidth = 287;
+											plotHeight = 232;,
+										plotWidth = Round( 643 * cAspectRatio + 67, 0 );
+										plotHeight = 800;
+									);
+									
+									//Plot matrix contourmaps																	
+									gb=dtSub << Graph Builder(
+										Size( plotWidth, plotHeight ),
+										
+										Show Control Panel( 0 ),
+										Variables(
+											X( dX[1] ),
+											Y( dX[2] ),
+											Wrap( :Name( "Group category" ), Size( 14 ) ),
+											Color( Eval( dC[ii] || " (t)" ) )
+										),
+										Elements( Points( X, Y, Color, Legend( 4 ), Number of Levels( nContour ) ) ),
+										SendToReport(
+											Dispatch(
+												{},
+												"400",
+												ScaleBox,
+												{Legend Model(
+													4,
+													Properties( 0, {gradient( {Color Theme( Theme ), Width( 15 ), Horizontal( Sdirection )} )} )
+												)}
+											)
+										)
+									);
+								dtSsub=dtSub <<	Summary( Group( :Group category ) );
+								rrr=nrows(dtSsub);
+								close(dtSsub);
+								for(i=1,i<=rrr,i++,
+								gb<<SendToReport(
+									Dispatch( {}, "Graph Builder", FrameBox( i ), {Marker Size( 2 )} )
+								);
+								);		
+								, 
+									
+									//Plot single-row contourmaps
+									plotWidth = 67 + (nGroups * 110); //Define plot width for a correct contourmap aspect ratio depending on the number of maps
+									gb=dtSub << Graph Builder(
+										Size( plotWidth, 232 ),
+									
+										Show Control Panel( 0 ),
+										Variables( X( dX[1] ), Y( dX[2] ), Group X( :Name( "Group category" ) ), Color( Eval( dC[ii] || " (t)" ) ) ),
+										Elements( Points( X, Y, Color, Legend( 4 ), Number of Levels( nContour ) ) ),
+										SendToReport(
+											Dispatch(
+												{},
+												"400",
+												ScaleBox,
+												{Legend Model(
+													4,
+													Properties( 0, {gradient( {Color Theme( Theme ), Width( 15 ), Horizontal( Sdirection )} )} )
+												)}
+											)
+										)
+									);
+								);
+								dtSsub=dtSub <<	Summary( Group( :Group category ) );
+								rrr=nrows(dtSsub);
+								close(dtSsub);
+								for(i=1,i<=rrr,i++,
+								gb<<SendToReport(
+									Dispatch( {}, "Graph Builder", FrameBox( i ), {Marker Size( 2 )} )
+								);
+								);					
+								clusterDlg << CloseWindow;
+							);
+						), 
+						
+						Button Box( "Cancel", clusterDlg << CloseWindow ), 
+						
+						Text Box( " " ), 
+						
+						Button Box( "Default",
+							colListX << Append( "X" );
+							colListX << Append( "Y" );
+							colListBy << Append( "LOT" );
+							colListBy << Append( "WAFER" );
+						), 
+						
+						Button Box( "Remove",
+							colListY << RemoveSelected;
+							colListX << RemoveSelected;
+							colListBy << RemoveSelected;
+						), 
+						
+						Button Box( "Recall",
+							colListX << Append( dX );
+							colListY << Append( dC );
+							colListBy << Append( dBRecall );
+							outputObj << Set( dispMode );
+							outputObj_B << Set( Sdirection + 1 );
+							cTheme << Set( ThemeRecall );
+							order << Set( 1, WaferOrder );
+							//******************************* mix, max, and # of countours cannot be recalled without crashing jmp. Need to work on this...
+						)
+					)
+				)
+			)
+		)
+	)
+);

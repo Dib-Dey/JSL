@@ -1,0 +1,17 @@
+dt = Current Data Table();
+colnames = dt << get selected columns();
+
+
+For( ii = 1, ii <= N Items( colnames ), ii++, 
+	
+	cn = colnames[ii];
+	cn << Get Data Type;
+	l = cn << Get Lock();
+	cn << Lock( 0 );
+	If(
+		cn << Get Data Type == "Character", cn << Set Each Value( If( Length( cn[] ) == 0, "NP", cn[] ) ),
+		cn << Get Data Type == "Numeric", cn << Set Each Value( If( cn[] > 500, , cn[] ) ),
+		cn << Get Data Type == "Numeric", cn << Set Each Value( If( cn[] < 1, , cn[] ) )
+	);
+	cn << Lock( l );
+);

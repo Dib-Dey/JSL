@@ -1,0 +1,17 @@
+dt=current data table();
+
+dt<<new column("V1M1SM_T2A1/24B:REGWINDOW_Mean-3-Sigma",Numeric,Continuous,
+    formula(:Name("V1M1SM_T2A1/24B:REGWINDOW@MEAN@7121@115BRCL~etest") - :Name("V1M1SM_T2A1/24B:REGWINDOW@STDDEV@7121@115BRCL~etest") * 3)
+);
+
+dt<<new column("V1M1SM_T2A1/24C:REGWINDOW_Mean-3-Sigma",Numeric,Continuous,
+    formula(:Name("V1M1SM_T2A1/24C:REGWINDOW@MEAN@7121@115BRCL~etest") - :Name("V1M1SM_T2A1/24C:REGWINDOW@STDDEV@7121@115BRCL~etest") * 3)
+);
+
+dt<<new column("V1M1SM_T2A15/68B:REGWINDOW_Mean-3-Sigma",Numeric,Continuous,
+    formula(:Name("V1M1SM_T2A15/68B:REGWINDOW@MEAN@7121@115BRCL~etest") - :Name("V1M1SM_T2A15/68B:REGWINDOW@STDDEV@7121@115BRCL~etest") * 3)
+);
+
+dt<<new column("V1M1SM_T2A5/68C:REGWINDOW_Mean-3-Sigma",Numeric,Continuous,
+    formula(:Name("V1M1SM_T2A5/68C:REGWINDOW@MEAN@7121@115BRCL~etest") - :Name("V1M1SM_T2A5/68C:REGWINDOW@STDDEV@7121@115BRCL~etest") * 3)
+);

@@ -1,0 +1,47 @@
+dt = CurrentDataTable();
+
+dt << ClearColumnSelection();
+
+:DefectID << SetSelected(1);
+
+dt << MoveSelectedColumns(ToFirst);
+:Lot7 << SetSelected(1);
+:Wafer << SetSelected(1);
+//:TM_look << SetSelected(1);
+:DefectID << SetSelected(1);
+:Xdie << SetSelected(1);
+:Ydie << SetSelected(1);
+:IO << SetSelected(1);
+:START_ROW << SetSelected(1);
+:START_COL << SetSelected(1);
+:END_ROW << SetSelected(1);
+:END_COL << SetSelected(1);
+:RASTER_CLASS << SetSelected(1);
+:ClusterClass << SetSelected(1);
+:TestMode << SetSelected(1);
+:UniqueIOName << SetSelected(1);
+dt << MoveSelectedColumns({"UniqueIOName"},ToLast);
+//dt << MoveSelectedColumns({"TM_look"},ToFirst);
+dt << MoveSelectedColumns({"Wafer"},ToFirst);
+dt << MoveSelectedColumns({"Lot7"},ToFirst);
+
+dt << MoveSelectedColumns({"ClusterClass"},ToLast);
+dt << MoveSelectedColumns({"DefectID"},ToLast);
+
+
+
+dts = dt << Subset(
+	Output Table( "bits_for_FAplan" ),
+	Selected Rows(1), Solected Columns(1)
+);
+
+
+uniqueIO_specs = Open("\\VMSPFSFSEG14\ptd_p1274_lya\Users\dsoltman\X74B_SS\FAplans\UniqueIO_specs.jmp",Invisible(1));
+
+dts << Update(
+			With( uniqueIO_specs ),
+			Match Columns( :UniqueIOName = :UniqueIOName ),
+			Add Columns from Update table( :Logic bitmap file )
+);
+
+Close(uniqueIO_specs, NoSave);

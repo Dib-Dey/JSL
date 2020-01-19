@@ -1,0 +1,112 @@
+//Generates a table with CAMDEX coordinates for all SRAM seats from a table with CADNAV coordinates. Input data table must have columns Site, CADNAV X, and CADNAV Y.
+
+Names Default To Here(1);
+dt = Current Data Table();
+
+//CAMDEX coordinate boundaries for columns
+Left_column_minX = -12349.344;
+Left_column_maxX = -4225.248;
+Middle_column_minX = -4062.048;
+Middle_column_maxX = 4062.048;
+Right_column_minX = 4225.248;
+Right_column_maxX = 12349.344;
+Frame_minX = -12512.594;
+Frame_maxX = 12512.594;
+
+//CAMDEX coordinate boundaries for rows
+Bottom_row_minY = -16398.288;
+Bottom_row_maxY = -8458.992;
+Middle_row_minY = -3969.648;
+Middle_row_maxY = 3969.648;
+Top_row_minY = 8458.992;
+Top_row_maxY = 16398.288;
+TC1_row_minY = 4050.000;
+TC1_row_maxY = 8378.640;
+TC2_row_minY = -8378.640;
+TC2_row_maxY = -4050.000;
+Frame_minY = -16478.690;
+Frame_maxY = 16478.690;
+
+//Offsets from CAMDEX
+CDSEM_offset_X = 12425.232;
+CDSEM_offset_Y = 16431.984;
+KLARITY_offset_X = 12438.172;
+KLARITY_offset_Y = 16442.396;
+
+//From CADNAV to CAMDEX ULV (left)
+dt << New Column("ULV (left) X", numeric, continuous, formula(dt:Name("CADNAV X") + Left_column_minX));
+dt << New Column("ULV (left) Y", numeric, continuous, formula(dt:Name("CADNAV Y") + Bottom_row_minY));
+dt << run formulas;
+
+//From CADNAV to CAMDEX YLD no DFM (left)
+dt << New Column("YLD no DFM (left) X", numeric, continuous, formula(dt:Name("CADNAV X") + Left_column_minX));
+dt << New Column("YLD no DFM (left) Y", numeric, continuous, formula(dt:Name("CADNAV Y") + Middle_row_minY));
+dt << run formulas;
+
+//From CADNAV to CAMDEX YLD DFM (left)
+dt << New Column("YLD DFM (left) X", numeric, continuous, formula(:Name("CADNAV X") + Left_column_minX));
+dt << New Column("YLD DFM (left) Y", numeric, continuous, formula(:Name("CADNAV Y") + Top_row_minY));
+dt << run formulas;
+
+//From CADNAV to CAMDEX ULV (middle)
+dt << New Column("ULV (middle) X", numeric, continuous, formula(dt:Name("CADNAV X") + Middle_column_minX));
+dt << New Column("ULV (middle) Y", numeric, continuous, formula(dt:Name("CADNAV Y") + Bottom_row_minY));
+dt << run formulas;
+
+//From CADNAV to CAMDEX YLD no DFM (middle)
+dt << New Column("YLD no DFM (middle) X", numeric, continuous, formula(dt:Name("CADNAV X") + Middle_column_minX));
+dt << New Column("YLD no DFM (middle) Y", numeric, continuous, formula(dt:Name("CADNAV Y") + Middle_row_minY));
+dt << run formulas;
+
+//From CADNAV to CAMDEX YLD DFM (middle)
+dt << New Column("YLD DFM (middle) X", numeric, continuous, formula(dt:Name("CADNAV X") + Middle_column_minX));
+dt << New Column("YLD DFM (middle) Y", numeric, continuous, formula(dt:Name("CADNAV Y") + Top_row_minY));
+dt << run formulas;
+
+//From CADNAV to CAMDEX ULV (right)
+dt << New Column("ULV (right) X", numeric, continuous, formula(dt:Name("CADNAV X") + Right_column_minX));
+dt << New Column("ULV (right) Y", numeric, continuous, formula(dt:Name("CADNAV Y") + Bottom_row_minY));
+dt << run formulas;
+
+//From CADNAV to CAMDEX YLD no DFM (right)
+dt << New Column("YLD no DFM (right) X", numeric, continuous, formula(dt:Name("CADNAV X") + Right_column_minX));
+dt << New Column("YLD no DFM (right) Y", numeric, continuous, formula(dt:Name("CADNAV Y") + Middle_row_minY));
+dt << run formulas;
+
+//From CADNAV to CAMDEX YLD DFM (right)
+dt << New Column("YLD DFM (right) X", numeric, continuous, formula(dt:Name("CADNAV X") + Right_column_minX));
+dt << New Column("YLD DFM (right) Y", numeric, continuous, formula(dt:Name("CADNAV Y") + Top_row_minY));
+dt << run formulas;
+
+ct = dt << Stack(
+	columns (dt:Name("ULV (left) X"), dt:Name("YLD no DFM (left) X"), dt:Name("YLD DFM (left) X"), dt:Name("ULV (middle) X"), dt:Name("YLD no DFM (middle) X"), dt:Name("YLD DFM (middle) X"), dt:Name("ULV (right) X"), dt:Name("YLD no DFM (right) X"), dt:Name("YLD DFM (right) X")),
+	Source Label Column ("Seat 1"),
+	Stacked Data Column ("CAMDEX X"),
+	Keep (dt:Name("Site"), dt:Name("CADNAV X"), dt:Name("CADNAV Y")),
+	Output Table ("CAMDEX seats");
+);
+ct << New Column("Seat", character, nominal, formula(Substr(ct:Name("Seat 1"),1,Num(Length(ct:Name("Seat 1"))-2))));
+ct << Delete Columns(ct:Name("Seat 1"));
+
+cty = dt << Stack(
+	columns (dt:Name("ULV (left) Y"), dt:Name("YLD no DFM (left) Y"), dt:Name("YLD DFM (left) Y"), dt:Name("ULV (middle) Y"), dt:Name("YLD no DFM (middle) Y"), dt:Name("YLD DFM (middle) Y"), dt:Name("ULV (right) Y"), dt:Name("YLD no DFM (right) Y"), dt:Name("YLD DFM (right) Y")),
+	Source Label Column ("Seat 1"),
+	Stacked Data Column ("CAMDEX Y"),
+	Keep (dt:Name("Site"), dt:Name("CADNAV X"), dt:Name("CADNAV Y")),
+	Output Table ("CAMDEX seats Y");
+);
+cty << New Column("Seat", character, nominal, formula(Substr(cty:Name("Seat 1"),1,Num(Length(cty:Name("Seat 1"))-2))));
+cty << Delete Columns(cty:Name("Seat 1"));
+
+ct << Update(
+	With( cty ),
+	Match Columns( ct:Name("Site") = cty:Name("Site"), ct:Name("CADNAV X") = cty:Name("CADNAV X"), ct:Name("CADNAV Y") = cty:Name("CADNAV Y"), ct:Name("Seat") = cty:Name("Seat")),
+	Add Columns from Update table(
+		:Name("CAMDEX Y")
+	)
+);
+ct << Move Selected Columns({"Seat"}, After("CADNAV Y"));
+
+Close( cty, NoSave );
+
+dt << Delete Columns("ULV (left) X", "YLD no DFM (left) X", "YLD DFM (left) X", "ULV (middle) X", "YLD no DFM (middle) X", "YLD DFM (middle) X", "ULV (right) X", "YLD no DFM (right) X", "YLD DFM (right) X", "ULV (left) Y", "YLD no DFM (left) Y", "YLD DFM (left) Y", "ULV (middle) Y", "YLD no DFM (middle) Y", "YLD DFM (middle) Y", "ULV (right) Y", "YLD no DFM (right) Y", "YLD DFM (right) Y");

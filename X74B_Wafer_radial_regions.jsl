@@ -1,0 +1,36 @@
+//Split into wafer regions
+
+dt = Current Data Table();
+
+radius_key = 0;
+Try(Column(dt, "R_mm") << Get Name, radius_key = 1);
+Try(Column(dt, "Radius_mm") << Get Name, radius_key = 2);
+
+Match(radius_key,
+	
+	0,
+
+	dt << New Column("WAFER_REGION", Character,
+		Formula(
+			If(
+				:R_mm <= 70, "CENTER [0,70]",
+				:R_mm <= 120 & :R_mm > 70, "DONUT (70,120]",
+				:R_mm <= 135 & :R_mm > 120, "EDGE (120,135]",
+				:R_mm & :R_mm > 135, "EXTREME EDGE (135,150]"
+			)
+		)
+	),
+	
+	1,
+	
+	dt << New Column("WAFER_REGION", Character,
+		Formula(
+			If(
+				:Radius_mm <= 70, "CENTER [0,70]",
+				:Radius_mm <= 120 & :Radius_mm > 70, "DONUT (70,120]",
+				:Radius_mm <= 135 & :Radius_mm > 120, "EDGE (120,135]",
+				:Radius_mm & :Radius_mm > 135, "EXTREME EDGE (135,150]"
+			)
+		)
+	)
+);

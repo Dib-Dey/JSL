@@ -1,0 +1,312 @@
+//needs function from this library
+include("\\VMSPFSFSEG14\ptd_p1274_lya\Utility JSLs\Scripts\JSL Libraries\genfunc_lib.jsl");
+
+//need to define ::
+//skew_config_path = "E:\Yggdrasil\Queries\shared\etest\skew\V0CHN_ENC.jmp" 
+skew_config_path = "\\orslya003\Yggdrasil\Queries\shared\etest\skew\V2CHN_COV.jmp";
+//skew_type = "SM"; //SM,ENC,LAN,COV,RES
+skew_type = "COV";
+//dt = raw data table (can be straight from wijt or can have already gone through first stages of postprocessing.jsl)
+dt = current data table();
+
+//for debug
+//dt = open("E:\Yggdrasil\Queries\X74BR-M0M1\etest\unprocessed\etest_unprocessed.jmp");  
+//dt_skews = open("\\orslya101\Yggdrasil\Queries\shared\etest\skew\V3CHN_ENC.jmp");
+//dt_skews = open("E:\Yggdrasil\Queries\shared\etest\skew\V0CHN_COV.jmp");
+//dt_skews = open("E:\Yggdrasil\Queries\shared\etest\skew\V0M0SM.jmp");
+
+diagnostics = 0;
+
+//make sure columns have right names
+try(dt:lot << set name("LOT7"));
+try(dt:X << set name("EtestX"));
+try(dt:Y << set name("EtestY"));
+
+if(file exists(skew_config_path),  //does config file exist?
+	dt_skews = open(skew_config_path,invisible);
+	,
+	Print("Skew definition does not exist!" || skew_config_path);
+);
+
+if(nrows(dt_skews)==0,  //does config file have rows?
+	Print("No skews defined!");stop();
+);
+
+//make list of all unique skew cols
+dt_skews_colsum = dt_skews << summary(group(:label));  
+skew_cns_temp = coltolist(dt_skews_colsum,"label"); //function from gen library
+try(close(dt_skews_colsum,nosave));
+skew_cns = {};
+for(h=1,h<=nitems(skew_cns_temp),h++,  //clean up list to make sure all cols exist
+	try(
+		column(dt,skew_cns_temp[h]) << get selected(); //check to make sure columns exist in dt
+		Insert into(skew_cns,skew_cns_temp[h]);
+		,
+		Print("Can't find column :: " || skew_cns_temp[h])
+	);
+);
+
+dt << clear column selection;
+
+//stack it up!  easier to handle this way
+dt_data = dt << stack(
+	Columns(eval(skew_cns)),
+	Source Label Column( "Label" ),
+	Stacked Data Column( "Data" ),
+	Name( "Non-stacked columns" )(Keep( :LOT7, :WAFER, :EtestX, :EtestY ))
+);
+dt_data << update(//add in skew information
+	with(dt_skews),
+	match columns(:label = :label)
+);
+try(close(dt_skews,nosave));
+
+
+if(diagnostics,
+	try( //for diagnostics
+		temp_file = pathtofilename(skew_config_path) || "_raw.jmp";
+		temp_dir = relpaths:query_dir || "\temp\";
+		try(create directory(temp_dir));
+		dt_data << save(temp_dir || temp_file);
+	);
+);
+
+//start skew calculation
+Print("Starting calculation using skew type " || skew_type || " for " || skew_config_path);
+
+//check for data
+try(dt_data << select where(IsMissing(:skew)) << delete rows);
+try(dt_data << select where(IsMissing(:data)) << delete rows);
+nrs = nrows(dt_data);
+if(nrs==0,Print("No usable data!");stop());
+
+dt_data << new column("Sign",Character);
+dt_data << new columN("PassFail");
+dt_data << new column("AbsSkew",Numeric,Set each value(abs(:skew)));
+current data table(dt_data);
+for each row(  //break up by +/-/0 and then apply passfail limit
+	if(
+		:skew[] == 0, :Sign[]="0",
+		:skew[] >=0, :sign[]="+",
+		:skew[] <0, :sign[]="-"
+	);
+	if(:data[] > :upperlimit[] | :data[] < :lowerlimit[] ,:passfail[]=0,:passfail[]=100);
+);
+
+if(diagnostics,
+	try( //for diagnostics
+		temp_file = pathtofilename(skew_config_path) || "_data.jmp";
+		temp_dir = relpaths:query_dir || "\temp\";
+		try(create directory(temp_dir));
+		dt_data << save(temp_dir || temp_file);
+	);
+);
+
+dt_sum = dt_data << summary(
+	group(:LOT7, :WAFER, :EtestX, :EtestY, :group,:sign,:passfail),
+	min(:AbsSkew),
+	max(:AbsSkew),
+	link to original data table(0)
+);
+try(close(dt_data,nosave));
+
+if(diagnostics,
+	try( //for diagnostics
+		temp_file = pathtofilename(skew_config_path) || "_1stSum.jmp";
+		temp_dir = relpaths:query_dir || "\temp\";
+		try(create directory(temp_dir));
+		dt_sum << save(temp_dir || temp_file);
+	);
+);
+
+//this table should tell me the min and max skew for pass and fail
+//I will get a different column for pass/fail
+dt_split = dt_sum << split(  
+	split by(:passfail),
+	split(:name("min(AbsSkew)"),:name("max(AbsSkew)")),
+	group(:LOT7, :WAFER, :EtestX, :EtestY, :group,:sign)
+);
+try(close(dt_sum,nosave));
+
+try(//add zero row for if needed
+	Column(dt_split,"min(absskew)0") << get selected();
+	,
+	dt_split << new column("Min(AbsSkew) 0");
+);
+
+current data table(dt_split);
+for each row(
+	if(
+		:sign[]=="+" | :sign[] == "-",
+		if(IsMissing(:name("min(AbsSkew)0")[]),
+			:name("min(AbsSkew)0")[] = :name("max(AbsSkew)100")[]
+		);
+		,
+		:sign=="0",
+		:name("min(AbsSkew)0")[] = :name("min(AbsSkew)100")[]
+	);
+);
+
+if(diagnostics,
+	try( //for diagnostics
+		temp_file = pathtofilename(skew_config_path) || "_2ndSum.jmp";
+		temp_dir = relpaths:query_dir || "\temp\";
+		try(create directory(temp_dir));
+		dt_split << save(temp_dir || temp_file);
+	);
+);
+
+//the skew I am interested is the 'min(absskew) 0' --> first failing structure on each side (+/-)
+try(dt_split << delete column("Min(AbsSkew) 100"));
+//try(dt_split << delete column("Max(AbsSkew) 100"));
+try(dt_split << delete column("Max(AbsSkew) 0"));
+try(dt_split << delete column("nrows"));
+Column(dt_split,"min(absskew)0") << set name("skew");
+Column(dt_split,"max(absskew)100") << set name("skew_2");  //keeping this to check if the group has a '0' or DR structure.  Not all do.
+
+dt_calc_ret = dt_split << split(
+	split by(:sign),
+	split(:skew,:skew_2),
+	group(:LOT7, :WAFER, :EtestX, :EtestY, :group),
+	drop all
+);
+try(close(dt_split,nosave));
+
+try(:name("skew 0") << get selected(),dt_calc_ret << new column("skew 0",set each value(0)));
+try(:name("skew +") << get selected(),dt_calc_ret << new column("skew +",set each value(0)));
+try(:name("skew -") << get selected(),dt_calc_ret << new column("skew -",set each value(0)));
+
+try(:name("skew_2 0") << get selected(),dt_calc_ret << new column("skew_2 0"));
+
+if(diagnostics,
+	try( //for diagnostics
+		temp_file = pathtofilename(skew_config_path) || "_lessanalyzed.jmp";
+		temp_dir = relpaths:query_dir || "\temp\";
+		try(create directory(temp_dir));
+		dt_calc_ret << save(temp_dir || temp_file);
+	);
+);
+
+try(dt_calc_ret << delete column("skew_2 +"));
+try(dt_calc_ret << delete column("skew_2 -"));
+
+current data table(dt_calc_ret);
+for each row(
+	if(IsMissing(Column("skew_2 0")[]) & IsMissing(Column("skew 0")[]),  //if no DR structure, fill in with 0 (pretend there is)
+		Column("skew 0")[] = 0
+	);
+);
+
+//rename to conform to how analysis script was originally written
+try(dt_calc_ret << delete column("skew_2 0"));
+try(Column(dt_calc_ret,"skew 0")<<set name("0"));
+try(Column(dt_calc_ret,"skew +")<<set name("+"));
+try(Column(dt_calc_ret,"skew -")<<set name("-"));
+
+if(diagnostics,
+	try( //for diagnostics
+		temp_file = pathtofilename(skew_config_path) || "_moreanalyzed.jmp";
+		temp_dir = relpaths:query_dir || "\temp\";
+		try(create directory(temp_dir));
+		dt_calc_ret << save(temp_dir || temp_file);
+	);
+);
+
+//calculate the window/margin/offset
+if(
+	skew_type == "SM" | skew_type == "LAN", //SM or LAN calc (2 sided)
+	dt_calc_ret << new column("Window");
+	dt_calc_ret << new column("Margin");
+	dt_calc_ret << new column("Offset");
+	split_cols = {"Window","Margin","Offset"};
+	for each row(
+		if(IsMissing(:name("0")[]),
+			:window[] = 0;
+			:margin[] = 0;
+			:offset[] = 0;
+			,
+			try(
+				:window[] = :name("+")[] + :name("-")[];
+				:margin[] = Min( :name("+")[],:name("-")[]);
+			);
+			if(IsMissing(:window[]),
+				try(
+					:window[] = :name("-")[];
+					,
+					:window[] = :name("+")[];
+				);
+			);
+			:offset[] = (:window[]/2 - :margin[]);
+			if(:name("+")[]<:name("-")[],:offset[] = -:offset[]);
+		);
+	);
+	,
+	skew_type == "COV" | skew_type == "ENC" | skew_type == "RES", //COV/ENC/RES calc (1 sided)
+	dt_calc_ret << new column("Window");
+	split_cols = {"Window"};
+	for each row(
+		if(IsMissing(:name("0")[]),
+			:window[] = 0;
+			,
+			:window[] = :name("-")[];
+		);
+	);
+);
+
+if(diagnostics,
+	try( //for diagnostics
+		temp_file = pathtofilename(skew_config_path);
+		temp_dir = relpaths:query_dir || "\temp\";
+		try(create directory(temp_dir));
+		dt_calc_ret << save(temp_dir || temp_file);
+	);
+);
+
+try(dt_calc_ret << delete column("-"));
+try(dt_calc_ret << delete column("+"));
+try(dt_calc_ret << delete column("0"));
+
+//now split cols again
+dt_final_ret = dt_calc_ret << split(
+	split by(:group),
+	split(Eval(split_cols))
+);
+try(close(dt_calc_ret,nosave));
+
+//some shenanigans to get the column names all neat and tiddy
+cns = dt_final_ret << get column names(string);
+skew_cns_all = {};
+if(nitems(split_cols)==1,
+	for(h=1,h<=nitems(cns),h++,
+		cn_t = lowercase(trim(cns[h]));
+		if(
+			cn_t != "lot" & cn_t != "lot7" & cn_t != "wafer" & cn_t != "etestx" & cn_t != "etesty",
+			new_colname = cns[h] || " " || split_cols[1] || "~etest";
+			Column(dt_final_ret,cns[h]) << set name(new_colname);
+			Insert into(skew_cns_all,new_colname);
+		);
+	);
+	,
+	for(h=1,h<=nitems(cns),h++,
+		cn_t = lowercase(trim(cns[h]));
+		if(
+			cn_t != "lot" & cn_t != "lot7" & cn_t != "wafer" & cn_t != "etestx" & cn_t != "etesty",
+			temp = cns[h];
+			if(
+				contains(temp,"Window "),
+				patmatch(temp,"Window ","");
+				temp = temp || " Window~etest";
+				,
+				contains(temp,"Margin "),
+				patmatch(temp,"Margin ","");
+				temp = temp || " Margin~etest";
+				,
+				contains(temp,"Offset "),
+				patmatch(temp,"Offset ","");
+				temp = temp || " Offset~etest";
+			);
+			Column(dt_final_ret,cns[h]) << set name(temp);
+			Insert into(skew_cns_all,temp);
+		);
+	);
+);

@@ -1,0 +1,19 @@
+//Dibyendu Dey
+//Need to pull the etest skew data from WIJT
+//Stack all skew column name 
+
+dt=Current Datatable();
+
+  
+  	dt << New Column( "type",
+	Character,
+	Nominal,
+	Formula( Word( 3, :Label, "_" ) )
+	);
+
+dt << New Column( "RECL",
+	Character,
+	Nominal,
+	Formula( Word( 3, :Label, "@" ) )
+	);
+

@@ -1,0 +1,10 @@
+dt= current data table ();
+
+Column( "SORT_DATE" )
+	<< data type( numeric )
+	<< Format( "m/d/y");
+	
+Column( "ETEST_DATE" )
+	<< data type( numeric )
+	<< Format( "m/d/y");
+	

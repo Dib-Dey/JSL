@@ -1,0 +1,17 @@
+dt << New Column( "M4 HIN Ash", Character, Set selected( 1 ) );
+Current Data Table( dt );
+colnames = dt << get column names( string );
+If( !(Contains( colnames, "ENTITY@NTSC@HIN@122162" )>0),
+	:Name( "M4 HIN Ash" )[] = "No",
+	Try(
+		checkPNA = Contains( colnames, "ENTITY@NTSC@HIN@122162" );
+		For Each Row(
+			If( checkPNA,
+				If( :Name( "ENTITY@NTSC@HIN@122162" ) != "",
+					:Name( "M4 HIN Ash" )[] = "Yes",
+					:Name( "M4 HIN Ash" )[] = "No"
+				)
+			);
+		);
+	);
+);

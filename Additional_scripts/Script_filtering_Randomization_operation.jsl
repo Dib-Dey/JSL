@@ -1,0 +1,18 @@
+dt = Current Data Table();
+x=nrow(); // calculate total number of row 
+For( i = 1, i <= x, i++,
+	(String = Column( "oper_long_desc" )[i] ; 
+	Entity = Column( "Entities" )[i] ; 
+	// substr (string, start, length)
+	rand = Substr( String, 9, 9 ) ;
+	adhoc= Substr(String, 15, 9);
+	If( rand == "RANDOMIZE"|adhoc=="RANDOMIZE",
+		Show( Row() = i )
+	) ;
+	 If( rand == "RANDOMIZE"|adhoc=="RANDOMIZE",
+		Current Data Table() << Select Rows( {i + 1} )
+	) ; 
+	If( rand == "RANDOMIZE"|adhoc=="RANDOMIZE",
+		Current Data Table() << Select Rows( {i - 1} )
+	) ; )
+);

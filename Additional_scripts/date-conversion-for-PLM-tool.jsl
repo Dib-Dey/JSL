@@ -1,0 +1,144 @@
+//***//*******
+//PLM413: 2/24 15x
+//PLM415: 2/25 15x 
+//PLM431: will be converted today 3/9 to 15x 
+//PLM433: will be converted today 3/9 to 15x 
+//*****///
+Clear Log();
+dt = Current Data Table();
+dt << New Column( "M3 Polish Date", Numeric, Continuous, Formula( Short Date( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124560" ) ) ), Lock( 1 ) );
+dt << New Column( "M4 Polish Date", Numeric, Continuous, Formula( Short Date( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124561" ) ) ), Lock( 1 ) );
+dt << New Column( "M2 Polish Date", Numeric, Continuous, Formula( Short Date( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124559" ) ) ), Lock( 1 ) );
+dt << New Column( "M5 Polish Date", Numeric, Continuous, Formula( Short Date( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124562" ) ) ), Lock( 1 ) );
+
+
+dt << New Column( "M5 Polish Chem",
+	Numeric,
+	Continuous,
+	Formula(
+		If(
+			Is Missing( :Name( "ENTITY@NTSC@PLM@124562" ) ) | Is Missing( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124562" ) ), "NA",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124562" ), Date DMY( 25, 2, 2015 ), "Day" ) > 6 &
+			:Name( "ENTITY@NTSC@PLM@124562" ) == "PLM413", "1x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124562" ), Date DMY( 25, 2, 2015 ), "Day" ) > 7, "1x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124562" ), Date DMY( 25, 2, 2015 ), "Day" ) <= 0 &
+			:Name( "ENTITY@NTSC@PLM@124562" ) == "PLM415", "15x",
+			7 > Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124562" ), Date DMY( 25, 2, 2015 ), "Day" ) > 0 &
+			:Name( "ENTITY@NTSC@PLM@124562" ) == "PLM415", "3x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124562" ), Date DMY( 24, 2, 2015 ), "Day" ) <= 0 &
+			:Name( "ENTITY@NTSC@PLM@124562" ) == "PLM413", "15x",
+			6 > Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124562" ), Date DMY( 25, 2, 2015 ), "Day" ) > 0 &
+			:Name( "ENTITY@NTSC@PLM@124562" ) == "PLM413", "3x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124562" ), Date DMY( 9, 3, 2015 ), "Day" ) <= 0 & (
+			:Name( "ENTITY@NTSC@PLM@124562" ) == "PLM431"), "15x",
+				Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124562" ), Date DMY( 9, 3, 2015 ), "Day" ) <= 0 & (
+			:Name( "ENTITY@NTSC@PLM@124562" ) == "PLM433"), "15x",
+			"3x"
+		)
+	)
+);
+
+dt << New Column( "M4 Polish Chem",
+	Numeric,
+	Continuous,
+	Formula(
+		If(
+			Is Missing( :Name( "ENTITY@NTSC@PLM@124561" ) ) | Is Missing( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124561" ) ), "NA",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124561" ), Date DMY( 25, 2, 2015 ), "Day" ) > 6 &
+			:Name( "ENTITY@NTSC@PLM@124561" ) == "PLM413", "1x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124561" ), Date DMY( 25, 2, 2015 ), "Day" ) > 7, "1x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124561" ), Date DMY( 25, 2, 2015 ), "Day" ) <= 0 &
+			:Name( "ENTITY@NTSC@PLM@124561" ) == "PLM415", "15x",
+			7 > Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124561" ), Date DMY( 25, 2, 2015 ), "Day" ) > 0 &
+			:Name( "ENTITY@NTSC@PLM@124561" ) == "PLM415", "3x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124561" ), Date DMY( 24, 2, 2015 ), "Day" ) <= 0 &
+			:Name( "ENTITY@NTSC@PLM@124561" ) == "PLM413", "15x",
+			6 > Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124561" ), Date DMY( 25, 2, 2015 ), "Day" ) > 0 &
+			:Name( "ENTITY@NTSC@PLM@124561" ) == "PLM413", "3x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124561" ), Date DMY( 9, 3, 2015 ), "Day" ) <= 0 & (
+			:Name( "ENTITY@NTSC@PLM@124561" ) == "PLM431"), "15x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124561" ), Date DMY( 9, 3, 2015 ), "Day" ) <= 0 & (
+			:Name( "ENTITY@NTSC@PLM@124561" ) == "PLM433"), "15x",
+			"3x"
+		)
+	)
+);
+
+dt << New Column( "M3 Polish Chem",
+	Numeric,
+	Continuous,
+	Formula(
+		If(
+			Is Missing( :Name( "ENTITY@NTSC@PLM@124560" ) ) | Is Missing( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124560" ) ), "NA",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124560" ), Date DMY( 25, 2, 2015 ), "Day" ) > 6 &
+			:Name( "ENTITY@NTSC@PLM@124560" ) == "PLM413", "1x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124560" ), Date DMY( 25, 2, 2015 ), "Day" ) > 7, "1x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124560" ), Date DMY( 25, 2, 2015 ), "Day" ) <= 0 &
+			:Name( "ENTITY@NTSC@PLM@124560" ) == "PLM415", "15x",
+			7 > Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124560" ), Date DMY( 25, 2, 2015 ), "Day" ) > 0 &
+			:Name( "ENTITY@NTSC@PLM@124560" ) == "PLM415", "3x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124560" ), Date DMY( 24, 2, 2015 ), "Day" ) <= 0 &
+			:Name( "ENTITY@NTSC@PLM@124560" ) == "PLM413", "15x",
+			6 > Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124560" ), Date DMY( 25, 2, 2015 ), "Day" ) > 0 &
+			:Name( "ENTITY@NTSC@PLM@124560" ) == "PLM413", "3x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124560" ), Date DMY( 9, 3, 2015 ), "Day" ) <= 0 & (
+			:Name( "ENTITY@NTSC@PLM@124560" ) == "PLM431"), "15x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124560" ), Date DMY( 9, 3, 2015 ), "Day" ) <= 0 & (
+			:Name( "ENTITY@NTSC@PLM@124560" ) == "PLM433"), "15x",
+			"3x"
+		)
+	)
+);
+
+dt << New Column( "M2 Polish Chem",
+	Numeric,
+	Continuous,
+	Formula(
+		If(
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124559" ), Date DMY( 25, 2, 2015 ), "Day" ) > 6 &
+			:Name( "ENTITY@NTSC@PLM@124559" ) == "PLM413", "1x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124559" ), Date DMY( 25, 2, 2015 ), "Day" ) > 7, "1x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124559" ), Date DMY( 25, 2, 2015 ), "Day" ) <= 0 &
+			:Name( "ENTITY@NTSC@PLM@124559" ) == "PLM415", "15x",
+			7 > Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124559" ), Date DMY( 25, 2, 2015 ), "Day" ) > 0 &
+			:Name( "ENTITY@NTSC@PLM@124559" ) == "PLM415", "3x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124559" ), Date DMY( 24, 2, 2015 ), "Day" ) <= 0 &
+			:Name( "ENTITY@NTSC@PLM@124559" ) == "PLM413", "15x",
+			6 > Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124559" ), Date DMY( 25, 2, 2015 ), "Day" ) > 0 &
+			:Name( "ENTITY@NTSC@PLM@124559" ) == "PLM413", "3x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124559" ), Date DMY( 9, 3, 2015 ), "Day" ) <= 0 & (
+			:Name( "ENTITY@NTSC@PLM@124559" ) == "PLM433"), "15x",
+			Date Difference( :Name( "TIME@COMPLETED@ENTITY@NTSC@PLM@124559" ), Date DMY( 9, 3, 2015 ), "Day" ) <= 0 & (
+			:Name( "ENTITY@NTSC@PLM@124559" ) == "PLM431"), "15x",
+			"3x"
+		)
+	)
+);
+
+dt << New Column( "M4_M3 tool",
+	Numeric,
+	Continuous,
+	Formula( :Name( "ENTITY@NTSC@PLM@124561" ) || "_" || :Name( "ENTITY@NTSC@PLM@124560" ) ),
+	Lock( 1 )
+);
+
+dt << New Column( "M4_M3 Chem", Numeric, Continuous, Formula( :M4 Polish Chem || "_" || :M3 Polish Chem ), Lock( 1 ) );
+
+
+dt << New Column( "M3_M2 tool",
+	Numeric,
+	Continuous,
+	Formula( :Name( "ENTITY@NTSC@PLM@124560" ) || "_" || :Name( "ENTITY@NTSC@PLM@124559" ) ),
+	Lock( 1 )
+);
+
+dt << New Column( "M3_M2 Chem", Numeric, Continuous, Formula( :M3 Polish Chem || "_" || :M2 Polish Chem ), Lock( 1 ) );
+
+dt << New Column( "M5_M4 tool",
+	Numeric,
+	Continuous,
+	Formula( :Name( "ENTITY@NTSC@PLM@124562" ) || "_" || :Name( "ENTITY@NTSC@PLM@124561" ) ),
+	Lock( 1 )
+);
+
+dt << New Column( "M5_M4 Chem", Numeric, Continuous, Formula( :M5 Polish Chem || "_" || :M4 Polish Chem ), Lock( 1 ) );

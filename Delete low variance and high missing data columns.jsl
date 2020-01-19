@@ -1,0 +1,132 @@
+dt=current data table();
+	Table_Name=dt<<get name;
+	TotalRows=nrows(dt);
+
+//	Extract column Names
+	Column_Titles=dt<<Get Column Names(string,continuous);	// all columns, names only
+	Num_Columns=NItems(Column_Titles);
+
+//	Pull in column Handles
+	Column_Handles=dt<<Get Column Names();		// all names
+	Titles=dt<<Get Column Names(continuous);	// numerical ones only
+	Num_Titles=NItems(Titles);
+
+// *************************User Questions *************************************//
+
+Missing_Threshold=0.5;	
+Variation_Threshold=0.1;
+
+//	Ask the user to set a threshold for missing data
+	Response=Dialog("Select what portion can be missing 0.3=delete if more than 30% missing (0-1.0) ", 
+		IgnoreColumns=EditNumber(eval(missing_threshold)),
+		Button("OK"),Button("Cancel"));
+	Missing_Threshold=eval(response[1]);
+
+//	Ask the user to set a threshold for the minimum amount of variation
+	Response=Dialog("Select minimum variance allwed 0=any variance allowed (0-1.0) ", 
+		IgnoreColumns=EditNumber(eval(Variation_threshold)),
+		Button("OK"),Button("Cancel"));
+	Variation_Threshold=eval(response[1]);
+
+	
+// ************************End User Questions************************************//
+
+StatusMsg("create a table to enable grouping the columns in the main data table");
+
+// *********************************************************************//
+	//	Now, create a table to enable grouping the columns in the main data table
+		st=New table("Column_Table");
+			Title_Col=st<<new Column("Orig_Col_Names",character);
+			DataType=st<<new Column("Data_Type",character);
+			Orig_order=st<<new Column("Order",ordinal);
+			rc=Title_Col<<set values(column_titles);
+			rc=Orig_order<<set each value(row());
+
+	//	Populate the data type column	
+		for (i=1,i<=num_columns, i++,
+			Title_elements=words(column_titles[i],"@");
+			DataType[i]=title_elements[1];			// First element
+		);	// for i=1 to num_titles
+
+	//	Summarize how many rows exist for each data type
+		Data Table( "Column_Table" ) << Summary( Group( :Data_Type ) );
+
+	//	Erase rows with only one column of that type
+		rc=data table("Column_Table By (Data_Type)")<<select where(:N rows==1);
+		rc=data table("Column_Table By (Data_Type)")<<delete rows();
+		
+		Type_Summary_Column_List=try(column(Data Table( "Column_Table By (Data_Type)" ),
+			"Data_Type"),-1);
+		Column_Data_Types=Type_Summary_Column_List<<get values;
+		rc=close(data table("Column_Table By (Data_Type)"),nosave);
+		rc=close(Data Table( "Column_Table" ),nosave);
+
+// *********************************************************************//
+
+	Parm_Type_Window=New Window( "Select Parameters types to Check",
+		H List Box(
+			chooseme = List Box( Column_Data_Types, width( 100 ), nlines( 6 ) ),
+			
+			Lineup Box(N Col( 1 ),Spacing( 3 ),	
+				Button Box( "Add Column >>",
+					listocols << Append( chooseme << GetSelected );
+				// Send Get Items to a Col List Box
+					Column_Types = listocols << GetItems; ),
+				Button Box( "<< Remove Column",
+					listocols << Remove Selected;
+				// Send Get Items to a Col List Box
+					Column_Types = listocols << GetItems;
+				),
+			),
+		// listocols is a List Box
+			listocols = List Box({}, width( 100 ), nlines( 6 ) ),
+		),
+		bb=Button Box("OK",Parm_Type_Window<<close window)
+	);	
+
+StatusMsg("Waiting 15 seconds");
+Wait(15);
+StatusMsg("Resuming");
+// *********************************************************************//	
+//	Extract columns to check based upon chosen column types
+	chosen_columns={};
+	
+	for(c=1,c<=nitems(column_types),c++,
+		//show(char(c));
+		Prefix=Column_types[c];
+		Prefix_Length=length(Prefix);
+		for(i=1,i<=num_columns,i++,
+			if(left(column_titles[i],prefix_length)==Prefix,insert into(Chosen_columns,column_titles[i]))
+		);	
+	);
+
+
+	
+// 'Chosen_Columns' contains the columns to check for too little variation or 
+//	too much missing data.
+
+	Num_Chosen_Columns=nitems(Chosen_Columns);
+
+	Columns_to_Delete={};
+	
+	for(i=1,i<=Num_Chosen_Columns,i++,
+		rc=try(column(dt,Chosen_Columns[i]),-1);
+		cur_name=rc<<get name;
+		num_missing=col n missing(rc);
+		Pct_Missing=num_missing/TotalRows;
+		Cur_Mean=col mean(rc);
+		Cur_std=col std dev(rc);
+		Variation=abs(cur_std/cur_mean);
+		
+		//Write("Missing "||char(PCT_missing)||","||char(variation)||" from "||cur_name||"\!N");
+		if((pct_missing>missing_threshold|variation<variation_threshold|is missing(Variation)) & (left(cur_name,5)!="ETEST" & left(cur_name,8)!="EXPECTED"),
+		stuff=insert into(Columns_to_Delete,cur_name);
+		Write(cur_name||",should be deleted, Missing="||left(char(pct_missing*100),5)||"%, Variation="||left(char(variation*100),5)||"%\!N");
+			
+		);
+	);
+	
+	
+	dt<< Begin Data Update;
+	dt<<delete columns(eval(Columns_to_Delete));
+StatusMsg("All Done");

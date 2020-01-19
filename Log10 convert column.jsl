@@ -1,0 +1,10 @@
+dt = currentdatatable();
+colnames = dt<<get selected columns();
+
+for(ii=1, ii<=NItems(colnames), ii++,
+      cn = colnames[ii];
+      
+      l=cn<<Get Lock(); cn<<Lock(0);
+      cn<<Set Each Value(log10(abs(cn[])));
+      cn<<Lock(l);
+)

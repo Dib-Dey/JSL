@@ -1,0 +1,53 @@
+//add columns from etest die map (Defect file)
+Names Default to Here(1);
+Clear log();
+
+//--------------
+// TO DISTINGUISH BETWEEN AN ETEST and SORT PLAN
+// the script looks for a column named "Test Chip"
+//-------------
+
+dt=current data table();
+thepath="\\DataGroveRA\P1274_LYA\Products\1x114b\Defect File\DefectFileNum_1x114B.jmp";
+
+failed=0;
+cns = dt << get column names();
+datatype = "etest";
+try(
+	Print(dt:testchip << get name());
+	datatype = "etest";
+	,
+	datatype = "sort";
+);
+Print(datatype);
+
+if(
+	datatype=="etest",
+	Try(
+		dtDefectFile=open(thepath,invisible);
+		dt<< Update(
+			With( dtDefectFile ),
+			Match Columns( 
+				:X = :etestX,
+				:Y = :etestY, 
+				:testchip = :dietype, 
+			),
+			Add columns from update table("Defect File Def#")
+		);
+		try(close(dtDefectFile,nosave));;
+	);
+	,
+	datatype=="sort",
+	Try(
+		dtDefectFile=open(thepath,invisible);
+		dt<< Update(
+			With( dtDefectFile ),
+			Match Columns( 
+				:Xdie = :smartx,
+				:Ydie = :smarty
+			),
+			Add columns from update table("Defect File Def#","Die Type")
+		);
+		try(close(dtDefectFile,nosave));;
+	);
+);

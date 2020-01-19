@@ -1,0 +1,100 @@
+//Die level TILA, GILA loss, IONE rec
+//Pull die level raw SPC from WIJT using operations 129065, 113900
+
+
+ClearLog();
+
+dt= CurrentDataTable();
+dt << Clear Column Selection;
+dt << Clear Select;
+
+//TILA values
+
+dt << Select where (:Name("PARAMETER_ALIAS") == "PLM.TILA_3PT.74@ML=4TILA_3PT_I;PN=THICKNESS");
+dt_TILA = dt << Subset (Output table name("dt_TILA"));
+
+dt_TILA_split = dt_TILA << Split(Split(:Name("VALUE")),ColID(:Name("WAFER_LOCATION")),Remaining Columns (Keep(:Name("LOT"),:Name("WAFER"))),Output table name("dt_TILA_split"));
+
+Column(dt_TILA_split, "THICK1") << Set Selected(1) <<Set Name("TILA_cnt");
+Column(dt_TILA_split, "THICK2") << Set Selected(1) <<Set Name("TILA_dnt");
+Column(dt_TILA_split, "THICK3") << Set Selected(1) <<Set Name("TILA_edge");
+
+dt_TILA_split << New Column ("TILA_3pt_mean",
+	Numeric,
+	Continuous,
+	Formula((:Name("TILA_cnt")+:Name("TILA_dnt")+:Name("TILA_edge"))/3)
+);
+
+Close( dt_TILA, NoSave );
+
+// GILA loss values
+
+dt << Select where (:Name("PARAMETER_ALIAS") == "PLM.TILA_GILA_LOSS_3PT.74@ML=4TILA_3PT_I;PN=THICKNESS");
+dt_GILA = dt << Subset (Output table name("dt_GILA"));
+
+dt_GILA_split = dt_GILA << Split(Split(:Name("VALUE")),ColID(:Name("WAFER_LOCATION")),Remaining Columns (Keep(:Name("LOT"),:Name("WAFER"))),Output table name("dt_GILA_split"));
+
+Column(dt_GILA_split, "THICK1") << Set Selected(1) <<Set Name("GILA_loss_cnt");
+Column(dt_GILA_split, "THICK2") << Set Selected(1) <<Set Name("GILA_loss_dnt");
+Column(dt_GILA_split, "THICK3") << Set Selected(1) <<Set Name("GILA_loss_edge");
+
+dt_GILA_split << New Column ("GILA_loss_3pt_mean",
+	Numeric,
+	Continuous,
+	Formula((:Name("GILA_loss_cnt")+:Name("GILA_loss_dnt")+:Name("GILA_loss_edge"))/3)
+);
+
+Close( dt_GILA, NoSave );
+
+dt_TILA_split << Update(
+	With( dt_GILA_split ),
+	Match Columns( :LOT = :LOT, :WAFER = :WAFER),
+	Add Columns from Update table(
+		:Name( "GILA_loss_cnt" ),
+		:Name( "GILA_loss_dnt" ),
+		:Name( "GILA_loss_edge" ),
+		:Name( "GILA_loss_3pt_mean" ),
+	));
+
+Close( dt_GILA_split, NoSave );
+
+//Calculate IONE rec from TILA & GILA loss
+
+dt_TILA_split << New Column ("IONE_rec_cnt",
+	Numeric,
+	Continuous,
+	Formula(:Name("TILA_cnt")+:Name("GILA_loss_cnt"))
+);
+
+dt_TILA_split << New Column ("IONE_rec_dnt",
+	Numeric,
+	Continuous,
+	Formula(:Name("TILA_dnt")+:Name("GILA_loss_dnt"))
+);
+
+dt_TILA_split << New Column ("IONE_rec_edge",
+	Numeric,
+	Continuous,
+	Formula(:Name("TILA_edge")+:Name("GILA_loss_edge"))
+);
+
+dt_TILA_split << New Column ("IONE_rec_3pt_mean",
+	Numeric,
+	Continuous,
+	Formula((:Name("IONE_rec_cnt")+:Name("IONE_rec_dnt")+:Name("IONE_rec_edge"))/3)
+);
+
+//dt_TILA_split << Rename Column Group(:Name("THICK1"),:Name("TILA_cnt"));
+
+//col<<Set Name("TILA_cnt");
+
+
+/*dt<<Split(Split(columns), Group(gcol), ColID(idcol), Remaining
+Columns(choice), Output Table Name("name"))
+
+dt<< Split(
+Split(columns), // the column to split
+Group(columns), // (optional) column to identify rows uniquely
+ColID(column), // the grouping variable on which to split
+Remaining Columns( Keep All | Drop All | Drop(columns) | Keep(columns)),
+Output Table Name("name"));*/

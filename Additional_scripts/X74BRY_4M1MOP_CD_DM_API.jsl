@@ -1,0 +1,101 @@
+dt1 = data table("4M1MOP_CD_DM_API");
+
+//following columns filter out "bogus data" - fairly aggressive. Use caution
+//Column("Sline1")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Sline2")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Sline3")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Sline4")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Sline5")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Sline6")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Sline7")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Sline_std1")<<Set Property(Range Check,LTLT(-1,10));
+//Column("Sline_std2")<<Set Property(Range Check,LTLT(-1,10));
+//Column("Bline1")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Bline2")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Bline3")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Bline4")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Bline_std1")<<Set Property(Range Check,LTLT(-1,10));
+//Column("Bline_std2")<<Set Property(Range Check,LTLT(-1,10));
+//Column("Cline1")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Cline2")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Cline3")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Cline4")<<Set Property(Range Check,LTLT(-1,45));
+//Column("Cline_std1")<<Set Property(Range Check,LTLT(-1,10));
+//Column("Cline_std2")<<Set Property(Range Check,LTLT(-1,10));
+
+//Column("M1S1")<<Set Property(Range Check,LTLT(-1,65));
+//Column("M1S2")<<Set Property(Range Check,LTLT(-1,65));
+//Column("M1R1")<<Set Property(Range Check,LTLT(-1,65));
+//Column("M1R2")<<Set Property(Range Check,LTLT(-1,65));
+
+//Column("M1SL1_min")<<Set Property(Range Check,LTLT(-1,90));Column("M1SL2_min")<<Set Property(Range Check,LTLT(-1,90));
+//Column("M1SL3_min")<<Set Property(Range Check,LTLT(-1,90));Column("M1SL4_min")<<Set Property(Range Check,LTLT(-1,90));
+//Column("M1SL5_min")<<Set Property(Range Check,LTLT(-1,90));
+
+//Column("M1RL1_min")<<Set Property(Range Check,LTLT(-1,90));Column("M1RL2_min")<<Set Property(Range Check,LTLT(-1,90));
+//Column("M1RL3_min")<<Set Property(Range Check,LTLT(-1,90));Column("M1RL4_min")<<Set Property(Range Check,LTLT(-1,90));
+//Column("M1RL5_min")<<Set Property(Range Check,LTLT(-1,90));
+
+dt1 << new column("SlineAVG",numeric,continuous,formula(Mean(:Sline1,:Sline2,:Sline3,:Sline4,:Sline5,:Sline6,:Sline7)));
+dt1 << new column("BlineAVG",numeric,continuous,formula(Mean(:Bline1,:Bline2,:Bline3,:Bline4)));
+dt1 << new column("ClineAVG",numeric,continuous,formula(Mean(:Cline1,:Cline2,:Cline3,:Cline4)));
+dt1 << new column("B-C Balance",numeric,continuous,formula(:BlineAVG - :ClineAVG));
+dt1 << new column("SlineRough",numeric,continuous,formula(Mean(:Sline_std1,:Sline_std2)));
+dt1 << new column("ClineRough",numeric,continuous,formula(Mean(:Bline_std1,:Bline_std2)));
+dt1 << new column("BlineRough",numeric,continuous,formula(Mean(:Cline_std1,:Cline_std2)));
+
+dt1 << new column("M1Savg",numeric,continuous,formula(Mean(:M1S1,:M1S2)));
+dt1 << new column("M1Ravg",numeric,continuous,formula(Mean(:M1R1,:M1R2)));
+
+dt1 << new column("M1R_LPlug_Wave",numeric,continuous,formula(stddev(:M1RL1_min,:M1RL2_min,:M1RL3_min,:M1RL4_min,:M1RL5_min)));
+dt1 << new column("M1S_LPlug_Wave",numeric,continuous,formula(stddev(:M1SL1_min,:M1SL2_min,:M1SL3_min,:M1SL4_min,:M1SL5_min)));
+dt1 << new column("M1Sline_LPlug_Wave",numeric,continuous,formula(stddev(:SL1_max,:SL2_max,:SL3_max,:SL4_max,:SL5_max)));
+dt1 << new column("M1Rline_LPlug_Wave",numeric,continuous,formula(stddev(:RL1_max,:RL2_max,:RL3_max,:RL4_max,:RL5_max)));
+dt1 << new column("Rline_LPlug_Mean",numeric,continuous,formula(mean(:RL1_max,:RL2_max,:RL3_max,:RL4_max,:RL5_max)));
+dt1 << new column("Sline_LPlug_Mean",numeric,continuous,formula(mean(:SL1_max,:SL2_max,:SL3_max,:SL4_max,:SL5_max)));
+dt1 << new column("M1R_LPlug_Mean",numeric,continuous,formula(mean(:M1RL1_min,:M1RL2_min,:M1RL3_min,:M1RL4_min,:M1RL5_min)));
+dt1 << new column("M1S_LPlug_Mean",numeric,continuous,formula(mean(:M1SL1_min,:M1SL2_min,:M1SL3_min,:M1SL4_min,:M1SL5_min)));
+
+
+dt1 << new column("Location",character,nominal,formula(if(:Defect Class==1,"Metro Nested Plug",:Defect Class==2,"ISO M1S ETE",
+		:Defect Class==3,"ISO M1RBB ETE",:Defect Class==4,"ISO M1RCM ETE",:Defect Class==8,"Double_Long_Plugs",:Defect Class==6,"QEK",:Defect Class==7,"QEK",
+		"Unknown")));
+
+dt2 = Data Table( "4M1MOP_CD_DM_API" ) << Stack(
+	columns(:M1S1,:M1S2,:M1R1,:M1R2),
+	Source Label Column( "Label" ),
+	Stacked Data Column( "Plug" )
+);
+dt2 <<new column("Plug Type",character,nominal,formula(substr(:Label,1,3)));
+
+dt3 = Data Table( "4M1MOP_CD_DM_API" ) << Stack(
+	columns(:M1R_LPlug_Wave,:M1S_LPlug_Wave),
+	Source Label Column( "Plug" ),
+	Stacked Data Column( "Plug Waviness" );
+);
+dt4 = dt3 << Stack(
+	columns(:M1Sline_LPlug_Wave,:M1Rline_LPlug_Wave),
+	Source Label Column( "Line" ),
+	Stacked Data Column( "Line Waviness" );
+);
+dt4<<new column("Plug Type",character,nominal,formula(substr(:Plug,3,1)));
+dt4<<new column("Line Type",character,nominal,formula(substr(:Line,3,1)));
+
+//Following creates dt2 which has the waferlevel Median of key metrics
+dt5 = dt4 << Summary(
+	Group( :LotID, :WaferID, :Inspection Time, :Split, :Location ),
+	Median( :ClineAvg ),
+	Median( :ClineRough ),
+	Median( :BlineAvg ),
+	Median( :BlineRough ),
+	Median( :SlineAvg ),
+	Median( :SlineRough ),
+	Median( :Name( "B-C Balance" ) ),
+	Median( :Name( "BC-S Balance")),
+	Quantiles( 90, :ClineAvg ),
+	Quantiles( 10, :ClineAvg ),
+	Quantiles( 90, :BlineAvg ),
+	Quantiles( 10, :BlineAvg ),
+	Quantiles( 90, :SlineAvg ),
+	Quantiles( 10, :SlineAvg )
+);

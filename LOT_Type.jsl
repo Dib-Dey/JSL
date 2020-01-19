@@ -1,0 +1,12 @@
+dt = current data table();
+
+fail = 0;
+
+Try(dt << New Column("LOT_Type",Formula(substr(:LOT7,5,1) ),Eval Formula),fail =1);
+
+If( 
+fail == 1,
+Try(dt << New Column("LOT_Type",Formula(substr(:LOT,5,1) ),Eval Formula));
+);
+
+dt << Move Selected Columns({"LOT_Type"}, To First);

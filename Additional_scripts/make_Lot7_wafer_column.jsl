@@ -1,0 +1,6 @@
+dt=current data table();
+
+dt<<new column("LOT7,WAFER",Character,Nominal,
+    formula(:LOT7 || "," || Char(:WAFER))
+);
+

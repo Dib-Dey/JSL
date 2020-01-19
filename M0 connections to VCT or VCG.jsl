@@ -1,0 +1,94 @@
+// M0 connections to VCT or VCG
+// 12 March 2014
+// Joshua LaForge  - joshua.m.laforge@intel.com
+// Adds columns to identify M0 line CM/BB/SP connections to VCT/VCG
+// Specific to X74Y layout.
+
+/* Expects columns typical to PRAVDA SB defect export */
+/* RASTER_CLASS and START_COL */
+
+dt = Current Data Table();
+
+dt << New Column( "VCG-M0", Character, Nominal,
+	Formula(
+		If( :RASTER_CLASS == "S_B_N",
+		If( :START_COL < 128 & Mod(:START_COL,64) < 32 | :START_COL >= 128 & Mod(:START_COL,64) >= 32,
+			Match(
+				Mod(:START_COL,4),
+				0, "BB",
+				1, "CM",
+				2, "CM",
+				3, "BB"
+				),
+			:START_COL < 128 & Mod(:START_COL,64) >= 32 | :START_COL >= 128 & Mod(:START_COL,64) <32,
+			Match(
+				Mod(:START_COL,4),
+				0, "CM",
+				1, "BB",
+				2, "BB",
+				3, "CM"
+			),
+			"NA"
+		),
+		:RASTER_CLASS == "S_B_P", "SP",
+		"NA")
+		
+	),
+	Eval Formula
+);
+
+dt << New Column( "VSS/VCC VCT-M0", Character, Nominal,
+	Formula(
+		If( :RASTER_CLASS == "S_B_P",
+		If( :START_COL < 128 & Mod(:START_COL,64) < 32 | :START_COL >= 128 & Mod(:START_COL,64) >= 32,
+			Match(
+				Mod(:START_COL,4),
+				0, "BB",
+				1, "CM",
+				2, "CM",
+				3, "BB"
+				),
+			:START_COL < 128 & Mod(:START_COL,64) >= 32 | :START_COL >= 128 & Mod(:START_COL,64) <32,
+			Match(
+				Mod(:START_COL,4),
+				0, "CM",
+				1, "BB",
+				2, "BB",
+				3, "CM"
+			),
+			"NA"
+		),
+		:RASTER_CLASS == "S_B_N", "SP",
+		"NA")
+		
+	),
+	Eval Formula
+);
+
+dt << New Column( "BL/BLB VCT-M0", Character, Nominal,
+	Formula(
+		If( :RASTER_CLASS == "S_B_N",
+		If( :START_COL < 128 & Mod(:START_COL,64) < 32 | :START_COL >= 128 & Mod(:START_COL,64) >= 32,
+			Match(
+				Mod(:START_COL,4),
+				0, "CM",
+				1, "BB",
+				2, "BB",
+				3, "CM"
+				),
+			:START_COL < 128 & Mod(:START_COL,64) >= 32 | :START_COL >= 128 & Mod(:START_COL,64) <32,
+			Match(
+				Mod(:START_COL,4),
+				0, "BB",
+				1, "CM",
+				2, "CM",
+				3, "BB"
+			),
+			"NA"
+		),
+		:RASTER_CLASS == "S_B_P", "SP",
+		"NA")
+		
+	),
+	Eval Formula
+);

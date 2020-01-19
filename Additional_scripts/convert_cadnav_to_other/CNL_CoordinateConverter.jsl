@@ -1,0 +1,193 @@
+//Converts between coordinates for CNL/PLKA reticle. Columns must be named in the format CAMDEX X or CDSEM X etc. Note that this script cannot convert FROM CADNAV coordinates for multiple seats in the same table. You will have to create a table for each seat and select the appropriate option for that table when running the script, then concatenate the tables afterward. There should however be no issue with conversion TO CADNAV from full reticle coordinates, as this script will make the appropriate seat assignments.
+
+Names Default To Here(1);
+dt = Current Data Table();
+
+New Window("CNL reticle coordinate conversion",
+	<< Modal,
+		H List Box(
+		V List Box(
+		Text Box("Coordinates you have (in um):"),
+			Convert_from = Combo Box({"CAMDEX", "CDSEM", "KLARITY (best guess)", "CADNAV (Bottom left seat)", "CADNAV (Middle left seat)", "CADNAV (Top left seat)", "CADNAV (Bottom middle seat)", "CADNAV (Middle middle seat)", "CADNAV (Top middle seat)", "CADNAV (Bottom right seat)", "CADNAV (Middle right seat)", "CADNAV (Top right seat)", "CADNAV (Frame)"})
+		),
+		V List Box(
+		Text Box("Coordinates you want (in um):"),
+			Convert_to = Combo Box({"CAMDEX", "CDSEM", "KLARITY (best guess)", "CADNAV"})
+		),
+		V List Box(
+		Button Box("OK",
+			Conversion_1 = Convert_from << get; //1 for CAMDEX; 2 for CDSEM; 3 for KLARITY; 4-6 for CADNAV bottom left seat, middle left seat, top left seat; 7-9 for CADNAV bottom middle seat, middle middle seat, top middle seat; 10-12 for CADNAV bottom right seat, middle right seat, top right seat; 13 for CADNAV frame
+			Conversion_2 = Convert_to << get; //1 for CAMDEX, 2 for CDSEM, 3 for KLARITY, 4 for CADNAV
+
+//CAMDEX coordinate boundaries for columns
+Left_column_minX = -12319.968;
+Left_column_maxX = -4215.456;
+Middle_column_minX = -4052.256;
+Middle_column_maxX = 4052.256;
+Right_column_minX = 4215.456;
+Right_column_maxX = 12319.968;
+Frame_minX = -12483.218;
+Frame_maxX = 12483.218;
+
+//CAMDEX coordinate boundaries for rows
+Bottom_row_minY = -12905.568;
+Bottom_row_maxY = -4408.922;
+Middle_row_minY = -4248.288;
+Middle_row_maxY = 4248.288;
+Top_row_minY = 4408.922;
+Top_row_maxY = 12905.568;
+Frame_minY = -13066.322;
+Frame_maxY = 13066.322;
+
+//Offsets from CAMDEX
+CDSEM_offset_X = -Frame_minX - 87.362;
+CDSEM_offset_Y = -Frame_minY - 85.568;
+KLARITY_offset_X = CDSEM_offset_X + 12.94;
+KLARITY_offset_Y = CDSEM_offset_X + 10.413;
+
+If(
+(Conversion_1 == Conversion_2) | 
+(4 <=Conversion_1 <= 12 & Conversion_2 == 4 )
+,
+Print("Conversion to same coordinate system")
+,
+If(
+Conversion_1 == 1, //From CAMDEX
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CAMDEX X")));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CAMDEX Y")));
+dt << run formulas;
+,
+Conversion_1 == 2, //From CDSEM
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CDSEM X") - CDSEM_offset_X));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CDSEM Y") - CDSEM_offset_Y));
+dt << run formulas;
+,
+Conversion_1 == 3, //From KLARITY
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("KLARITY X") - KLARITY_offset_X));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("KLARITY Y") - KLARITY_offset_Y));
+dt << run formulas;
+,
+Conversion_1 == 4, //From CADNAV bottom left seat
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CADNAV X") + Left_column_minX));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CADNAV Y") + Bottom_row_minY));
+dt << run formulas;
+,
+Conversion_1 == 5, //From CADNAV middle left seat
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CADNAV X") + Left_column_minX));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CADNAV Y") + Middle_row_minY));
+dt << run formulas;
+,
+Conversion_1 == 6, //From CADNAV top left seat
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CADNAV X") + Left_column_minX));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CADNAV Y") + Top_row_minY));
+dt << run formulas;
+,
+Conversion_1 == 7, //From CADNAV bottom middle seat
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CADNAV X") + Middle_column_minX));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CADNAV Y") + Bottom_row_minY));
+dt << run formulas;
+,
+Conversion_1 == 8, //From CADNAV middle middle seat
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CADNAV X") + Middle_column_minX));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CADNAV Y") + Middle_row_minY));
+dt << run formulas;
+,
+Conversion_1 == 9, //From CADNAV top middle seat
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CADNAV X") + Middle_column_minX));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CADNAV Y") + Top_row_minY));
+dt << run formulas;
+,
+Conversion_1 == 10, //From CADNAV bottom right seat
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CADNAV X") + Right_column_minX));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CADNAV Y") + Bottom_row_minY));
+dt << run formulas;
+,
+Conversion_1 == 11, //From CADNAV middle right seat
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CADNAV X") + Right_column_minX));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CADNAV Y") + Middle_row_minY));
+dt << run formulas;
+,
+Conversion_1 == 12, //From CADNAV top right seat
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CADNAV X") + Right_column_minX));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CADNAV Y") + Top_row_minY));
+dt << run formulas;
+,
+Conversion_1 == 13, //From CADNAV frame
+dt << New Column("DUMMY X", numeric, continuous, formula(:Name("CADNAV X") + Frame_minX));
+dt << New Column("DUMMY Y", numeric, continuous, formula(:Name("CADNAV Y") + Frame_minY));
+dt << run formulas;
+);
+:Name("DUMMY X") << Delete Formula;
+:Name("DUMMY Y") << Delete Formula;
+
+dt << New Column("Row", character, continuous, formula(If(
+Frame_maxY < :Name("DUMMY Y") | Frame_minY > :Name("DUMMY Y"), "OOB", 
+Bottom_row_minY <= :Name("DUMMY Y") <= Bottom_row_maxY, "Bottom", 
+Middle_row_minY <= :Name("DUMMY Y") <= Middle_row_maxY, "Middle", 
+Top_row_minY <= :Name("DUMMY Y") <= Top_row_maxY, "Top", "Frame")));
+:Name("Row") << Delete Formula;
+
+dt << New Column("Column", character, continuous, formula(If(
+Frame_maxX < :Name("DUMMY X") | Frame_minX > :Name("DUMMY X"), "OOB", 
+Left_column_minX <= :Name("DUMMY X") <= Left_column_maxX, "Left", 
+Middle_column_minX <= :Name("DUMMY X") <= Middle_column_maxX, "Middle", 
+Right_column_minX <= :Name("DUMMY X") <= Right_column_maxX, "Right", 
+"Frame")));
+:Name("Column") << Delete Formula;
+
+dt << New Column("Seat", character, continuous, formula(If(
+:Name("Row") == "OOB" | :Name("Column") == "OOB", "OOB", 
+:Name("Row") == "Frame" | :Name("Column") == "Frame", "Frame", 
+:Name("Row") || " " || :Name("Column"))));
+:Name("Seat") << Delete Formula;
+
+If(
+Conversion_2 == 1, //To CAMDEX
+dt << New Column("CAMDEX X", numeric, continuous, formula(:Name("DUMMY X")));
+dt << New Column("CAMDEX Y", numeric, continuous, formula(:Name("DUMMY Y")));
+dt << run formulas;
+:Name("CAMDEX X") << Delete Formula;
+:Name("CAMDEX Y") << Delete Formula;
+,
+Conversion_2 == 2, //To CDSEM
+dt << New Column("CDSEM X", numeric, continuous, formula(:Name("DUMMY X") + CDSEM_offset_X));
+dt << New Column("CDSEM Y", numeric, continuous, formula(:Name("DUMMY Y") + CDSEM_offset_Y));
+dt << run formulas;
+:Name("CDSEM X") << Delete Formula;
+:Name("CDSEM Y") << Delete Formula;
+,
+Conversion_2 == 3, //To KLARITY
+dt << New Column("KLARITY X", numeric, continuous, formula(:Name("DUMMY X") + KLARITY_offset_X));
+dt << New Column("KLARITY Y", numeric, continuous, formula(:Name("DUMMY Y") + KLARITY_offset_Y));
+dt << run formulas;
+:Name("KLARITY X") << Delete Formula;
+:Name("KLARITY Y") << Delete Formula;
+,
+Conversion_2 == 4, //To CADNAV
+dt << New Column("CADNAV X", numeric, continuous, formula(If(
+:Name("Seat") == "Frame", :Name("DUMMY X") - Frame_minX,
+:Name("Column") == "Left", :Name("DUMMY X") - Left_column_minX, 
+:Name("Column") == "Middle", :Name("DUMMY X") - Middle_column_minX, 
+:Name("Column") == "Right", :Name("DUMMY X") - Right_column_minX, 
+Empty()
+)));
+dt << New Column("CADNAV Y", numeric, continuous, formula(If(
+:Name("Seat") == "Frame", :Name("DUMMY Y") - Frame_minY, 
+:Name("Row") == "Bottom", :Name("DUMMY Y") - Bottom_row_minY, 
+:Name("Row") == "Middle", :Name("DUMMY Y") - Middle_row_minY, 
+:Name("Row") == "Top", :Name("DUMMY Y") - Top_row_minY, 
+Empty())));
+dt << run formulas;
+:Name("CADNAV X") << Delete Formula;
+:Name("CADNAV Y") << Delete Formula;
+);
+dt << Delete Columns("DUMMY X", "DUMMY Y", "Row", "Column");
+);
+
+),
+ButtonBox("Cancel",
+	TextBox(" ")
+)
+)
+);
+);

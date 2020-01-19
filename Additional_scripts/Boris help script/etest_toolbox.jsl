@@ -1,0 +1,177 @@
+get_retest_visited = function({lotlist,oplist},{default local},
+	//create operation selection string
+	op_str = "(";
+	for(i=1,i<=nitems(oplist),i++,
+		op_str = op_str || "'" || trim(oplist[i]) || "',";
+	);
+	op_str = remove(op_str,-1,1) || ")";
+	if(length(op_str) < 3,op_str = "",op_str = "and we.OPERATION in " || op_str);
+	//create lot selection string
+	lot_str = "(";
+	for(i=1,i<=nitems(lotlist),i++,
+		lot_str = lot_str || "we.lot like '" || trim(lotlist[i]) || "%' OR ";
+	);
+	lot_str = remove(lot_str,-4,4) || ")";
+
+	//build SQL
+	sql = "
+	select
+		  we.wafer_key,
+		  we.etest_wafer_key,
+		  substr(we.lot,1,7) as lot7,
+		  we.lot,
+		  we.wafer as wafer3,
+		  cast(we.wafer as int) as wafer,
+		  we.operation,
+		  we.program,
+		  we.test_date,
+		  we.load_date
+		from borisdb_d1d_1274.wafer_etest we
+     where 
+       " || lot_str || " 
+       " || op_str;
+
+	//print(sql);
+
+	dt = opendatabase(OS_connect,sql,"ETEST_VISITED");
+	dt;
+);
+
+get_cetest_visited = function({lotlist,oplist},{default local},
+	//create operation selection string
+	op_str = "(";
+	for(i=1,i<=nitems(oplist),i++,
+		op_str = op_str || "'" || trim(oplist[i]) || "',";
+	);
+	op_str = remove(op_str,-1,1) || ")";
+	if(length(op_str) < 3,op_str = "",op_str = "and we.OPERATION in " || op_str);
+	//create lot selection string
+	lot_str = "(";
+	for(i=1,i<=nitems(lotlist),i++,
+		lot_str = lot_str || "we.lot like '" || trim(lotlist[i]) || "%' OR ";
+	);
+	lot_str = remove(lot_str,-4,4) || ")";
+
+	//build SQL
+	sql = "
+	select
+		  we.wafer_key,
+		  we.etest_wafer_key,
+		  substr(we.lot,1,7) as lot7,
+		  we.lot,
+		  we.wafer as wafer3,
+		  cast(we.wafer as int) as wafer,
+		  we.operation,
+		  we.program,
+		  we.test_date,
+		  we.load_date
+		from borisdb_d1d_1274.wafer_custom_etest we
+     where 
+       " || lot_str || " 
+       " || op_str;
+
+	//print(sql);
+
+	dt = opendatabase(OS_connect,sql,"ETEST_VISITED");
+	dt;
+);
+
+get_waferkeys = function({lotlist},{default local},
+
+	//create lot selection string
+	lot_str = "(";
+	for(i=1,i<=nitems(lotlist),i++,
+		lot_str = lot_str || "wc.lot like '" || trim(lotlist[i]) || "%' OR ";
+	);
+	lot_str = remove(lot_str,-4,4) || ")";
+	
+	sql = "
+	select
+	  wc.lot7,
+	  wc.wafer3,
+	  cast(wc.wafer3 as int) as wafer,
+	  wc.wafer12,
+	  wc.wafer_key	  
+	from borisdb_d1d_1274.wafer_central wc
+	where
+       " || lot_str;
+    //print(sql);
+
+	dt = opendatabase(OS_connect,sql,"WAFER_KEYS");
+	dt;
+);
+
+OS_connect = "DRIVER=Oracle in Oracle_11gR2_x64_1;DBQ=OregonSMART;UID=;pwd=";
+
+this_dir = remove(convert file path("",absolute,windows),-1,1);
+lotlist_path = convert file path("LOTLIST.txt",absolute,windows);
+oplist_path = convert file path("OPLIST.txt",absolute,windows);
+
+instr_str = 
+"
+Get wafer keys for testing custom etest xmls (use column 'WAFER_KEY' not 'ETEST_WAFER_KEY')
+Get raw etest that a wafer visited
+Get custom etest that is calculated for a wafer
+";
+
+spc_toolbox = New Window("ETEST TOOLBOX",
+	Border Box( Left( 5 ),top( 5 ),right(5),bottom(5),
+		V List Box(
+			H List box( 
+				Panel box("LOT LIST",Scrollbox(
+					lotlistbox = Text Edit Box("",
+						<<set script(save text file(lotlist_path,lotlistbox << get text)),
+						<<set width(150),
+						<<set height(200),
+						<<set nlines(50),
+					)	
+				))
+				,
+				Panel box("OPERATION LIST",Scrollbox(
+					oplistbox = Text Edit Box("",
+						<<set script(save text file(oplist_path,oplistbox << get text)),
+						<<set width(150),
+						<<set height(200),
+						<<set nlines(50),
+					)	
+				))
+			)
+			,
+			V list box(
+				H list box(
+					Button Box("Get Waferkeys",
+						lotlist = words(lotlistbox << get text,"\!n");
+						dt_data = get_waferkeys(lotlist);								
+					);
+					,
+					button box("Get Raw Etest Visited",
+						lotlist = words(lotlistbox << get text,"\!n");
+						oplist = words(oplistbox << get text,"\!n");
+						dt_data = get_retest_visited(lotlist,oplist);	
+					);
+					,
+					button box("Get Custom Etest Loaded",
+						lotlist = words(lotlistbox << get text,"\!n");
+						oplist = words(oplistbox << get text,"\!n");
+						dt_data = get_cetest_visited(lotlist,oplist);	
+					);
+				);
+			);
+			,
+			text box(
+				instr_str
+			);
+		);
+	)
+);
+
+spc_toolbox << Set Window Size( 450, 600 );  //set sizing
+
+if(file exists(lotlist_path),  //load settings
+	lotlist_str = load text file(lotlist_path);
+	lotlistbox << set text(lotlist_str);
+);
+if(file exists(oplist_path),
+	oplist_str = load text file(oplist_path);
+	oplistbox << set text(oplist_str);
+);

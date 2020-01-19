@@ -1,0 +1,16 @@
+Try(close(dt,nosave));
+open("\\VMSPFSFSEG14\ptd_p1274_lya\Lot Analysis\X74Y\X74Y Lot List with owners.xlsx");
+new="";
+dt=Current Datatable();
+x=nrow();
+for(i =1 , i<=x, i++,
+	string=Column(dt,"LOT")[i];
+	string=substr(string,1,7);
+	if(i<x,new=concatto(new,string,"*",","),new=concatto(new,string,"*"));
+);
+New Window("String to put in looking glass",
+	Text Edit Box(new,<< set width(1000), setNlines(10)),
+	Button Box ("OK"),
+	Button Box ("Cancel")
+		);
+

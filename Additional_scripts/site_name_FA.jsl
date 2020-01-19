@@ -1,0 +1,24 @@
+﻿//generate site column name for FA 
+dt = Current Data Table();
+dt << New Column( "Site",
+	Character,
+	Nominal,
+	Formula( :Name("1X114B chains combs") || "_" || Char(Row())),
+	Lock( 1 )
+);
+dt << New Column("END_ROW");
+dt << New Column("END_COLUMN");
+dt << New Column("RASTER_CLASS");
+
+dt << Move Selected Columns({“Site”}, To First);
+dt << Move Selected Columns({“Xdie”}, After("Site"));
+dt << Move Selected Columns({“Ydie”}, After("Xdie"));
+dt << Move Selected Columns({“IO”}, After("Ydie"));
+dt << Move Selected Columns({“START_ROW”}, After("IO"));
+dt << Move Selected Columns({“START_COL”}, After("START_ROW"));
+dt << Move Selected Columns({“END_ROW”}, After("START_COL"));
+dt << Move Selected Columns({“END_COLUMN”}, After("END_ROW"));
+dt << Move Selected Columns({“RASTER_CLASS”}, After("END_COLUMN"));
+dt << Move Selected Columns({“1X114B chains combs”}, After("RASTER_CLASS"));
+dt << Move Selected Columns({“XcWithinDie”}, After("1X114B chains combs"));
+dt << Move Selected Columns({“YcWithinDie”}, After("XcWithinDie"));
